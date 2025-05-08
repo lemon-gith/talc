@@ -1,0 +1,6 @@
+[submodule "nics/corundum"]
+	path = nics/corundum
+	url = https://github.com/corundum/corundum.git
+[submodule "nics/tonic"]
+	path = nics/tonic
+	url = https://github.com/minmit/tonic.git

@@ -17,8 +17,10 @@ RUN . venv/bin/activate && pip install --upgrade pip
 
 RUN . venv/bin/activate && pip install cocotb cocotb-bus cocotb-test cocotbext-axi cocotbext-eth cocotbext-pcie pytest scapy tox pytest-xdist pytest-sugar
 
-# copy over previously cloned corundum repo
-COPY ./nics/corundum /corundum
+# copy over corundum files, using same directory structure as in SimBricks
+COPY ./nics/corundum/fpga/common/lib /corundum/lib
+COPY ./nics/corundum/fpga/common/rtl /corundum/rtl
+COPY ./nics/corundum_if/ /corundum/
 
 ENTRYPOINT [ "sleep", "infinity" ]
 

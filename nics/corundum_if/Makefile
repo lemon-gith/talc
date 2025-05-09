@@ -20,43 +20,44 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-include mk/subdir_pre.mk
+# modified into Makefile by lemon-gith (date:20250509)
+# with the help of GPT-4o (via GitHub Copilot)
 
-
-dir_corundum := $(d)
-bin_corundum := $(d)corundum_verilator
-verilator_dir_corundum := $(d)obj_dir
+dir_corundum := $(CURDIR)/
+bin_corundum := $(dir_corundum)corundum_verilator
+verilator_dir_corundum := $(dir_corundum)obj_dir
 verilator_src_corundum := $(verilator_dir_corundum)/Vinterface.cpp
 verilator_bin_corundum := $(verilator_dir_corundum)/Vinterface
 
-vsrcs_corundum := $(wildcard $(d)rtl/*.v $(d)lib/*/rtl/*.v \
-    $(d)lib/*/lib/*/rtl/*.v)
-srcs_corundum := $(addprefix $(d),corundum_verilator.cc dma.cc mem.cc)
+vsrcs_corundum := $(wildcard $(dir_corundum)rtl/*.v \
+	$(dir_corundum)lib/*/rtl/*.v $(dir_corundum)lib/*/lib/*/rtl/*.v)
+srcs_corundum := $(addprefix $(dir_corundum),\
+	corundum_verilator.cc dma.cc mem.cc)
 OBJS := $(srcs_corundum:.cc=.o)
 
-$(OBJS): CPPFLAGS := $(CPPFLAGS) -I$(d)include/
+all: $(bin_corundum)
+
+$(OBJS): CPPFLAGS := $(CPPFLAGS) -I$(dir_corundum)include/
 
 $(verilator_src_corundum): $(vsrcs_corundum)
 	$(VERILATOR) $(VFLAGS) --cc -O3 \
-	    -CFLAGS "-I$(abspath $(lib_dir)) -iquote $(abspath $(base_dir)) -O3 -g -Wall -Wno-maybe-uninitialized" \
-	    --Mdir $(verilator_dir_corundum) \
-	    -y $(dir_corundum)rtl \
-	    -y $(dir_corundum)lib/axi/rtl \
-	    -y $(dir_corundum)lib/eth/lib/axis/rtl/ \
-	    -y $(dir_corundum)lib/pcie/rtl \
-	    $(dir_corundum)rtl/interface.v --exe $(abspath $(srcs_corundum)) \
-	      $(abspath $(lib_nicif) $(lib_netif) $(lib_pcie) $(lib_base))
+		-CFLAGS "-I$(abspath $(lib_dir)) -iquote $(abspath $(base_dir)) -O3 -g -Wall -Wno-maybe-uninitialized" \
+		--Mdir $(verilator_dir_corundum) \
+		-y $(dir_corundum)rtl \
+		-y $(dir_corundum)lib/axi/rtl \
+		-y $(dir_corundum)lib/eth/lib/axis/rtl/ \
+		-y $(dir_corundum)lib/pcie/rtl \
+		$(dir_corundum)rtl/interface.v --exe $(abspath $(srcs_corundum)) \
+		  $(abspath $(lib_nicif) $(lib_netif) $(lib_pcie) $(lib_base))
 
 $(verilator_bin_corundum): $(verilator_src_corundum) $(srcs_corundum) \
-    $(lib_nicif) $(lib_netif) $(lib_pcie) $(lib_base)
+	$(lib_nicif) $(lib_netif) $(lib_pcie) $(lib_base)
 	$(MAKE) -C $(verilator_dir_corundum) -f Vinterface.mk
 
 $(bin_corundum): $(verilator_bin_corundum)
 	cp $< $@
 
-CLEAN := $(bin_corundum) $(verilator_dir_corundum) $(OBJS)
+clean:
+	rm -rf $(bin_corundum) $(verilator_dir_corundum) $(OBJS)
 
-ifeq ($(ENABLE_VERILATOR),y)
-ALL := $(bin_corundum)
-endif
-include mk/subdir_post.mk
+.PHONY: all clean

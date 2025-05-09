@@ -4,3 +4,6 @@
 [submodule "nics/tonic"]
 	path = nics/tonic
 	url = https://github.com/minmit/tonic.git
+[submodule "nics/tunic"]
+	path = nics/tunic
+	url = https://github.com/lemon-gith/tunic.git

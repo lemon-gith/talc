@@ -4,6 +4,11 @@ The Verilator Testbench and testing setup for the [SVIRD](https://gitlab.com/acc
 
 ## Usage
 
+### Corundum
+
+> [!NOTE]
+> The way I've set up the Makefiles, without modification, this will only run in the [docker container](./containers/corundum.Dockerfile)
+
 ## Design
 
 Currently, I'm attempting to use 2 different NIC implementations: [Corundum](https://github.com/corundum/corundum), [Tonic](https://github.com/minmit/tonic)

@@ -1,3 +1,6 @@
 *.swp
 build
 data/
+*.o
+*.a
+*.d

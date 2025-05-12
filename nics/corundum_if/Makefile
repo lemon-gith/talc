@@ -38,9 +38,9 @@ VFLAGS = +1364-2005ext+v \
     -Wno-CASEINCOMPLETE -Wno-UNSIGNED $(EXTRA_VFLAGS)
 
 
-$(eval $(call subdir,.))
+# recurse into subdirectories: build libraries first, then the main binary
 $(eval $(call subdir,lib))
-
+$(eval $(call subdir,.))
 
 all: $(ALL_ALL)
 .DEFAULT_GOAL := all
@@ -48,7 +48,6 @@ all: $(ALL_ALL)
 clean:
 	rm -rf $(CLEAN_ALL)
 
-# TODO: rewrite this?
 help:
 	@echo "Targets:"
 	@echo "  all (default): builds the entire system"

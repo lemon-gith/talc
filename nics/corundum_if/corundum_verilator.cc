@@ -37,12 +37,12 @@ extern "C" {
 #include <simbricks/nicif/nicif.h>
 }
 
-#include "sims/nic/corundum/coord.h"
-#include "sims/nic/corundum/corundum.h"
-#include "sims/nic/corundum/debug.h"
-#include "sims/nic/corundum/dma.h"
-#include "sims/nic/corundum/mem.h"
-#include "sims/nic/corundum/obj_dir/Vinterface.h"
+#include "coord.h"
+#include "corundum.h"
+#include "debug.h"
+#include "dma.h"
+#include "mem.h"
+#include "obj_dir/Vinterface.h"
 
 struct DMAOp;
 

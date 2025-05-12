@@ -30,9 +30,9 @@
 #include <deque>
 #include <set>
 
-#include "sims/nic/corundum/coord.h"
-#include "sims/nic/corundum/debug.h"
-#include "sims/nic/corundum/obj_dir/Vinterface.h"
+#include "coord.h"
+#include "debug.h"
+#include "obj_dir/Vinterface.h"
 
 #define MAX_DMA_LEN 2048
 

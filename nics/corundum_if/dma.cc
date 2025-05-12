@@ -22,13 +22,13 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "sims/nic/corundum/dma.h"
+#include "dma.h"
 
 #include <iostream>
 
-#include "sims/nic/corundum/corundum.h"
-#include "sims/nic/corundum/debug.h"
-#include "sims/nic/corundum/mem.h"
+#include "corundum.h"
+#include "debug.h"
+#include "mem.h"
 
 void DMAReader::step() {
   p.dma_ready = 1;

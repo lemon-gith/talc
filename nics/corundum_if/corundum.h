@@ -25,7 +25,7 @@
 #ifndef CORUNDUM_H_
 #define CORUNDUM_H_
 
-#include "sims/nic/corundum/dma.h"
+#include "dma.h"
 
 extern uint64_t main_time;
 

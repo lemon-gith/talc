@@ -22,12 +22,12 @@
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include "sims/nic/corundum/mem.h"
+#include "mem.h"
 
 #include <iostream>
 
-#include "sims/nic/corundum/debug.h"
-#include "sims/nic/corundum/dma.h"
+#include "debug.h"
+#include "dma.h"
 
 /*
  * 1024 bits total data width

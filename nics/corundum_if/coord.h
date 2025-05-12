@@ -29,7 +29,7 @@
 #include <iostream>
 #include <map>
 
-#include "sims/nic/corundum/debug.h"
+#include "debug.h"
 
 class DMAOp;
 struct MMIOOp;

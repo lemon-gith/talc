@@ -29,7 +29,7 @@
 
 #include <deque>
 
-#include "sims/nic/corundum/obj_dir/Vinterface.h"
+#include "obj_dir/Vinterface.h"
 
 class DMAOp;
 

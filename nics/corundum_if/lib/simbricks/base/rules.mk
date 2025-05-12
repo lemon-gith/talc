@@ -22,17 +22,11 @@
 
 include mk/subdir_pre.mk
 
-$(info Entering $(d))
-
 lib_base := $(d)libbase.a
 
 OBJS := $(addprefix $(d),if.o)
 
 libsimbricks_objs += $(OBJS)
-
-$(info lib_base = $(lib_base))
-$(info OBJS = $(OBJS))
-$(info libsimbricks_objs = $(libsimbricks_objs))
 
 $(lib_base): $(OBJS)
 

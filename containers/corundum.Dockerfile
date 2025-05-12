@@ -34,6 +34,7 @@ COPY ./nics/corundum_if/ /corundum/
 
 # overwrite files with errors, with patches written by SimBricks devs
 COPY ./containers/corundum_patches/port.v /corundum/rtl/port.v
+COPY ./containers/corundum_patches/interface.v /corundum/rtl/interface.v
 COPY ./containers/corundum_patches/dma_client_axis_sink.v /corundum/lib/pcie/rtl/dma_client_axis_sink.v
 
 ENTRYPOINT [ "sleep", "infinity" ]

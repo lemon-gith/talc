@@ -3,7 +3,7 @@ FROM ubuntu:24.04
 RUN apt update && apt upgrade -y
 
 # install useful networking tools
-RUN apt install -y iproute2 curl iputils-ping net-tools dnsutils
+RUN apt install -y iproute2 curl iputils-ping net-tools dnsutils tcpdump
 
 # install SimBricks corundum dependencies
 RUN apt install -y python3-dev python-is-python3 python3-pip gtkwave \

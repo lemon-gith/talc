@@ -44,6 +44,7 @@ $(verilator_src_corundum): $(vsrcs_corundum)
 	    -y $(dir_corundum)lib/axi/rtl \
 	    -y $(dir_corundum)lib/eth/lib/axis/rtl/ \
 	    -y $(dir_corundum)lib/pcie/rtl \
+		-v $(dir_corundum)rtl/mqnic_tx_scheduler_block_rr.v \
 	    $(dir_corundum)rtl/mqnic_interface.v --exe $(abspath $(srcs_corundum)) \
 	      $(abspath $(lib_nicif) $(lib_netif) $(lib_pcie) $(lib_base))
 

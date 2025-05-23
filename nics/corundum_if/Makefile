@@ -33,7 +33,7 @@ CXXFLAGS += -Wall -Wextra -Wno-unused-parameter -O3 -fPIC -std=gnu++17 $(EXTRA_C
 CPPFLAGS += -I$(base_dir)/lib -iquote$(base_dir) $(EXTRA_CPPFLAGS)
 
 VERILATOR = verilator
-VFLAGS = +1364-2005ext+v \
+VFLAGS = +1800-2005ext+v \
     -Wno-WIDTH -Wno-PINMISSING -Wno-LITENDIAN -Wno-IMPLICIT -Wno-SELRANGE \
     -Wno-CASEINCOMPLETE -Wno-UNSIGNED $(EXTRA_VFLAGS)
 

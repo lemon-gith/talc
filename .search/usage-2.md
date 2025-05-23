@@ -56,6 +56,26 @@ Interestingly, `WireNet` only connects 2 devices, so presumably a new `WireNet` 
 
 TODO: maybe do this first, since this interface may be more immediately useful?
 
+Unrelated, but apparently the interface file in the latest version of Corundum has been removed :D
+
 ### 使い方
 
 > TODO: When I figure out what the interface looks like, this will be me trying to use it
+
+
+# Latest Corundum Test
+
+```sv
+indir_tbl_index_reg[INDIR_TBL_ADDR_WIDTH-1:0] <= (
+    req_dest & app_mask_reg[req_id]) + (req_hash & hash_mask_reg[req_id]
+);
+if (PORTS > 1) begin
+    indir_tbl_index_reg[INDIR_TBL_ADDR_WIDTH +: CL_PORTS] <= req_id;
+    // This line is the problem, the problem is the width of this ^
+end
+req_dest_d1_reg <= req_dest;
+req_dest_d1_reg[DEST_WIDTH-1] <= req_dest[DEST_WIDTH-1] & app_direct_en_reg[req_id];
+req_tag_d1_reg <= req_tag;
+req_valid_d1_reg <= req_valid;
+```
+

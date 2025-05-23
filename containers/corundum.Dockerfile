@@ -38,7 +38,7 @@ COPY ./nics/corundum_if/ /corundum/
 #COPY ./containers/corundum_patches/dma_client_axis_sink.v /corundum/lib/pcie/rtl/dma_client_axis_sink.v
 
 # overwrite /lib/eth/lib/axis python files with SimBricks versions
-COPY ./containers/corundum_patches/eth_lib_axis-py/ /corundum/lib/eth/lib/axis/
+COPY ./containers/patches/eth_lib_axis-py/ /corundum/lib/eth/lib/axis/
 
 ENTRYPOINT [ "sleep", "infinity" ]
 

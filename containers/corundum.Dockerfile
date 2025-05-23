@@ -1,12 +1,12 @@
 FROM ubuntu:24.04
 
-RUN apt update && apt upgrade -y
+RUN apt-get update && apt-get upgrade -y
 
 # install useful networking tools
-RUN apt install -y iproute2 curl iputils-ping net-tools dnsutils tcpdump
+RUN apt-get install -y iproute2 curl iputils-ping net-tools dnsutils tcpdump
 
 # install SimBricks corundum dependencies
-RUN apt install -y python3-dev python-is-python3 python3-pip gtkwave \
+RUN apt-get install -y python3-dev python-is-python3 python3-pip gtkwave \
  git autoconf apt-utils bc bison flex build-essential cmake doxygen g++
 
 # install verilator separately, since it uses an older version

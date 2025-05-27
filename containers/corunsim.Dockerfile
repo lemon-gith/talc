@@ -30,12 +30,12 @@ WORKDIR /corundum
 # copy over corundum files, using same directory structure as in SimBricks
 COPY ./nics/corundum/fpga/common/lib /corundum/lib
 COPY ./nics/corundum/fpga/common/rtl /corundum/rtl
-COPY ./nics/corundum_if/ /corundum/
+COPY ./nics/corunsim/interface/ /corundum/
 
 # overwrite files with errors, with patches written by SimBricks devs
-#COPY ./containers/corundum_patches/port.v /corundum/rtl/mqnic_port.v
-#COPY ./containers/corundum_patches/interface.v /corundum/rtl/mqnic_interface.v
-#COPY ./containers/corundum_patches/dma_client_axis_sink.v /corundum/lib/pcie/rtl/dma_client_axis_sink.v
+COPY ./containers/corundum_patches/port.v /corundum/rtl/mqnic_port.v
+COPY ./containers/corundum_patches/interface.v /corundum/rtl/mqnic_interface.v
+COPY ./containers/corundum_patches/dma_client_axis_sink.v /corundum/lib/pcie/rtl/dma_client_axis_sink.v
 
 # overwrite /lib/eth/lib/axis python files with SimBricks versions
 COPY ./containers/patches/eth_lib_axis-py/ /corundum/lib/eth/lib/axis/
@@ -43,6 +43,6 @@ COPY ./containers/patches/eth_lib_axis-py/ /corundum/lib/eth/lib/axis/
 ENTRYPOINT [ "sleep", "infinity" ]
 
 # run from repo root:
-# docker build -t corundum_test -f containers/corundum.Dockerfile .
-# docker run -d --name corundum_tb corundum_test
-# docker exec -it corundum_tb bash
+# docker build -t corunsim_test -f containers/corunsim.Dockerfile .
+# docker run -d --name corunsim_tb corunsim_test
+# docker exec -it corunsim_tb bash

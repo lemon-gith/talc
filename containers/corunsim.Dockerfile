@@ -11,7 +11,7 @@ RUN apt-get install -y python3-dev python-is-python3 python3-pip gtkwave \
 
 # install verilator separately, since it uses an older version
 # and also needs a patch
-COPY ./containers/corundum_patches/verilator.patch /tmp/
+COPY ./containers/patches/corunsim/verilator.patch /tmp/
 WORKDIR /tmp
 RUN git clone -b v4.010 https://github.com/verilator/verilator \
  && cd verilator \
@@ -28,17 +28,17 @@ RUN mkdir -p /corundum
 WORKDIR /corundum
 
 # copy over corundum files, using same directory structure as in SimBricks
-COPY ./nics/corundum/fpga/common/lib /corundum/lib
-COPY ./nics/corundum/fpga/common/rtl /corundum/rtl
+COPY ./nics/corunsim/corundum/fpga/common/lib /corundum/lib
+COPY ./nics/corunsim/corundum/fpga/common/rtl /corundum/rtl
 COPY ./nics/corunsim/interface/ /corundum/
 
 # overwrite files with errors, with patches written by SimBricks devs
-COPY ./containers/corundum_patches/port.v /corundum/rtl/mqnic_port.v
-COPY ./containers/corundum_patches/interface.v /corundum/rtl/mqnic_interface.v
-COPY ./containers/corundum_patches/dma_client_axis_sink.v /corundum/lib/pcie/rtl/dma_client_axis_sink.v
+COPY ./containers/patches/corunsim/port.v /corundum/rtl/port.v
+COPY ./containers/patches/corunsim/interface.v /corundum/rtl/interface.v
+COPY ./containers/patches/corunsim/dma_client_axis_sink.v /corundum/lib/pcie/rtl/dma_client_axis_sink.v
 
 # overwrite /lib/eth/lib/axis python files with SimBricks versions
-COPY ./containers/patches/eth_lib_axis-py/ /corundum/lib/eth/lib/axis/
+COPY ./containers/patches/corunsim/eth_lib_axis-py/ /corundum/lib/eth/lib/axis/
 
 ENTRYPOINT [ "sleep", "infinity" ]
 

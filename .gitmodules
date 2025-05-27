@@ -1,9 +1,9 @@
 [submodule "nics/corundum"]
 	path = nics/corundum
 	url = https://github.com/corundum/corundum.git
-[submodule "nics/tonic"]
-	path = nics/tonic
-	url = https://github.com/minmit/tonic.git
 [submodule "nics/tunic"]
 	path = nics/tunic
 	url = https://github.com/lemon-gith/tunic.git
+[submodule "nics/corunsim/corundum"]
+	path = nics/corunsim/corundum
+	url = https://github.com/corundum/corundum.git

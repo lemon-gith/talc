@@ -28,16 +28,13 @@ COPY ./nics/corundma_tb /corundum/fpga/app/dma_bench/tb/corundma_tb
 COPY ./containers/patches/mqnic_rx_queue_map.v /corundum/fpga/common/rtl/mqnic_rx_queue_map.v
 COPY ./containers/patches/mqnic_core_pcie_us.Makefile /corundum/fpga/app/dma_bench/tb/mqnic_core_pcie_us/Makefile
 
-# overwrite /lib/eth/lib/axis python files with SimBricks versions
-# COPY ./containers/patches/eth_lib_axis-py/ /corundum/lib/eth/lib/axis/
-
 ENTRYPOINT [ "sleep", "infinity" ]
 
 # run from repo root:
-# docker build -t coruntest -f containers/coruntest.Dockerfile .
-# docker run -d --name coruntb coruntest
+# docker build -t corunacc -f containers/corunacc.Dockerfile .
+# docker run -d --name coracc corunacc
 
-# docker exec -it coruntb bash
+# docker exec -it coracc bash
 # Then remember to source the venv and set verilator as the SIM:
 # source /corundum/venv/bin/activate
 # export SIM=verilator

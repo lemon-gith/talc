@@ -21,4 +21,4 @@ The python code isn't great and is out-of-date, as a result, is I've created a f
 
 ## TODOs
 
-> TODO: - I lost my TODOs in the git jumble, but alas
+> TODO: Once you've sorted out this repo, rewrite this README, to be more helpful and to describe exactly what's used for what purpose

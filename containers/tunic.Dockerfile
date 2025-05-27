@@ -25,3 +25,6 @@ ENTRYPOINT [ "sleep", "infinity" ]
 # docker build -t tunic_test -f containers/tunic.Dockerfile .
 # docker run -d --name tunic_tb tunic_test
 # docker exec -it tunic_tb bash
+
+# source /tunic/venv/bin/activate
+# ./tools/runtest --type sim --config tonic/tonic_reno.yaml

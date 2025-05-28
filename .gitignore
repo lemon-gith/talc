@@ -9,3 +9,4 @@ data/
 # ignore corundum testbench build files
 __pycache__/
 sim_build/
+results.xml

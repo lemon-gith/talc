@@ -5,3 +5,7 @@ data/
 *.a
 *.d
 .misc/
+
+# ignore corundum testbench build files
+__pycache__/
+sim_build/

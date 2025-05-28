@@ -22,3 +22,7 @@ The python code isn't great and is out-of-date, as a result, is I've created a f
 ## TODOs
 
 > TODO: Once you've sorted out this repo, rewrite this README, to be more helpful and to describe exactly what's used for what purpose
+
+## On-Board Development
+
+When moving onto testing for specific boards, as a result of all the Corundum symlinks, the `app/` directory that we're using for these testbenches is pulled in everywhere needed, so, as long as you remember to port your `mqnic_app_block.v` over to where it's needed, too, you should be all set.

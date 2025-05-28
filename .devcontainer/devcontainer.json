@@ -5,9 +5,14 @@
     "context": ".."
   },
   "runArgs": [
+    /*
+      I've set up gpus for docker, and I highly recommend it:
+      having a GPU makes a big difference to simulation speed!
+
+      https://stackoverflow.com/q/25185405 <- if you have a GPU
+      if you can't, then you should comment this line out:
+    */
     "--gpus=all"
-    // if you're not using dev containers, this is the mounting trickery I'm doing
-    //"--mount type=bind,src=./src/corunacc/tb,dst=/corundum/fpga/app/dma_bench/tb/corunacc"
   ],
   "workspaceMount": "source=${localWorkspaceFolder}/src/corunacc/tb/,target=/corundum/fpga/app/dma_bench/tb/corunacc,type=bind",
   "workspaceFolder": "/corundum",

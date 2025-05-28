@@ -14,7 +14,7 @@
     */
     "--gpus=all"
   ],
-  "workspaceMount": "source=${localWorkspaceFolder}/src/corunacc/tb/,target=/corundum/fpga/app/dma_bench/tb/corunacc,type=bind",
+  "workspaceMount": "source=${localWorkspaceFolder}/src/corunacc/tb/,target=/corundum/fpga/app/template/tb/corunacc,type=bind",
   "workspaceFolder": "/corundum",
 
   "customizations": {

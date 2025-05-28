@@ -31,7 +31,7 @@ ENTRYPOINT [ "sleep", "infinity" ]
 
 # run from repo root:
 # docker build -t corunacc -f containers/corunacc.Dockerfile .
-# docker run -d --name coracc --mount type=bind,src=./src/corunacc/tb,dst=/corundum/fpga/app/dma_bench/tb/corunacc corunacc
+# docker run -d --name coracc --mount type=bind,src=./src/corunacc/tb,dst=/corundum/fpga/app/template/tb/corunacc corunacc
 # docker exec -it coracc bash
 
 # source /corundum/venv/bin/activate

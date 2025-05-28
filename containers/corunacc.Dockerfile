@@ -20,23 +20,21 @@ RUN python3 -m venv venv
 RUN . venv/bin/activate && pip install --upgrade pip
 RUN . venv/bin/activate && pip install cocotb cocotbext-axi cocotbext-eth cocotbext-pcie scapy cocotb_test pytest
 
-# copy over corundum files, using same directory structure as in SimBricks
+# copy over corundum files
 COPY ./nics/corundum /corundum
-COPY ./nics/corundma_tb /corundum/fpga/app/dma_bench/tb/corundma_tb
-
-# overwrite files with errors, with patches written by me
-COPY ./containers/patches/mqnic_rx_queue_map.v /corundum/fpga/common/rtl/mqnic_rx_queue_map.v
-COPY ./containers/patches/mqnic_core_pcie_us.Makefile /corundum/fpga/app/dma_bench/tb/mqnic_core_pcie_us/Makefile
+# TODO: possibly do similar extractions as in corunsim to reduce the complexity of the system later?
 
 ENTRYPOINT [ "sleep", "infinity" ]
 
+# to get our nice mounted directory, which should make working on this easier,
+# make sure to run the `docker run` command below
+
 # run from repo root:
 # docker build -t corunacc -f containers/corunacc.Dockerfile .
-# docker run -d --name coracc corunacc
-
+# docker run -d --name coracc --mount type=bind,src=./src/corunacc/tb,dst=/corundum/fpga/app/dma_bench/tb/corunacc corunacc
 # docker exec -it coracc bash
-# Then remember to source the venv and set verilator as the SIM:
+
 # source /corundum/venv/bin/activate
-# export SIM=verilator
+# cd fpga/app/dma_bench/tb/corunacc
 #
-# before running make
+# then you can run make to run the testbench with `make`

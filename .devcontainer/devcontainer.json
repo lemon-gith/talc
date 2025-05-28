@@ -1,0 +1,31 @@
+{
+  "name": "corunacc",
+  "build": {
+    "dockerfile": "../containers/corunacc.Dockerfile",
+    "context": ".."
+  },
+  "runArgs": [
+    "--gpus=all"
+    // if you're not using dev containers, this is the mounting trickery I'm doing
+    //"--mount type=bind,src=./src/corunacc/tb,dst=/corundum/fpga/app/dma_bench/tb/corunacc"
+  ],
+  "workspaceMount": "source=${localWorkspaceFolder}/src/corunacc/tb/,target=/corundum/fpga/app/dma_bench/tb/corunacc,type=bind",
+  "workspaceFolder": "/corundum",
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "dbaeumer.vscode-eslint",
+        "ms-vscode.makefile-tools",
+        "ms-vscode.cpptools",
+        "ms-python.vscode-pylance",
+        "ms-python.python",
+        "charliermarsh.ruff",
+        "ms-python.debugpy",
+        "ms-vscode.cmake-tools",
+        "eirikpre.systemverilog",
+        "formulahendry.code-runner"
+      ]
+    }
+  }
+}

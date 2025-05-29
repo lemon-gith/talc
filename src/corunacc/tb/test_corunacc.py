@@ -978,6 +978,14 @@ async def full_nic_test(dut):
 
     print(lst)
 
+    # -------------------- Another kind of test? --------------------
+
+    tb.log.info("Test AXI lite interface to application")
+
+    await tb.driver.app_hw_regs.write_dword(0, 0x11223344)
+
+    print(await tb.driver.app_hw_regs.read_dword(0))
+
     await RisingEdge(dut.clk)
     await RisingEdge(dut.clk)
 

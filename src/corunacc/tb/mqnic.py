@@ -1651,7 +1651,7 @@ class Driver:
         self.interrupt_running = False
 
         self.if_count = 1
-        self.interfaces = []
+        self.interfaces: list[Interface] = []
 
         self.pkt_buf_size = 16384
         self.allocated_packets = []

@@ -29,7 +29,7 @@ from cocotbext.pcie.xilinx.us import UltraScalePlusPcieDevice
 from tests.test import tell_me_the_truth, tell_me_lies  # noqa: F401
 
 
-# TODO: what is this?
+# import mqnic, if Python can't find it in repo, hijack system PATH
 try:
     import mqnic
 except ImportError:
@@ -38,6 +38,7 @@ except ImportError:
     try:
         import mqnic
     finally:
+        # clear this item from PATH once import is complete (polite)
         del sys.path[0]
 
 
@@ -55,6 +56,7 @@ class TB(object):
         self.rc.max_payload_size = 0x1  # 256 bytes
         self.rc.max_read_request_size = 0x2  # 512 bytes
 
+        # TODO: it would probably be good to be able to be able to swap this out
         self.dev = UltraScalePlusPcieDevice(
             # configuration options
             pcie_generation=3,
@@ -741,6 +743,8 @@ async def full_nic_test(dut):
     tb.log.info("RX and TX checksum tests")
     await checksum_test(tb)
 
+    # -------------------- Another kind of test? --------------------
+
     tb.log.info("Queue mapping offset test")
 
     data = bytearray([x % 256 for x in range(1024)])
@@ -762,6 +766,9 @@ async def full_nic_test(dut):
     tb.loopback_enable = False
 
     await tb.driver.interfaces[0].set_rx_queue_map_indir_table(0, 0, 0)
+
+    # -------------------- Another kind of test? --------------------
+    # no, wait, this is a reconfiguration from ^2,
 
     if tb.driver.interfaces[0].if_feature_rss:
         tb.log.info("Queue mapping RSS mask test")
@@ -805,6 +812,8 @@ async def full_nic_test(dut):
 
         await tb.driver.interfaces[0].set_rx_queue_map_rss_mask(0, 0)
 
+    # -------------------- Another kind of test? --------------------
+
     tb.log.info("Multiple small packets")
 
     count = 64
@@ -825,6 +834,8 @@ async def full_nic_test(dut):
             assert pkt.rx_checksum == ~scapy.utils.checksum(bytes(pkt.data[14:])) & 0xffff
 
     tb.loopback_enable = False
+
+    # -------------------- Another kind of test? --------------------
 
     tb.log.info("Multiple large packets")
 
@@ -847,6 +858,8 @@ async def full_nic_test(dut):
 
     tb.loopback_enable = False
 
+    # -------------------- Similar test to above --------------------
+
     tb.log.info("Jumbo frames")
 
     count = 64
@@ -867,6 +880,8 @@ async def full_nic_test(dut):
             assert pkt.rx_checksum == ~scapy.utils.checksum(bytes(pkt.data[14:])) & 0xffff
 
     tb.loopback_enable = False
+
+    # --------------- Same test as above^2, but on all ifs ---------------
 
     if len(tb.driver.interfaces) > 1:
         tb.log.info("All interfaces")
@@ -889,6 +904,8 @@ async def full_nic_test(dut):
                 assert pkt.rx_checksum == ~scapy.utils.checksum(bytes(pkt.data[14:])) & 0xffff
 
         tb.loopback_enable = False
+
+    # -------------------- Another kind of test? --------------------
 
     if len(tb.driver.interfaces[0].sched_blocks) > 1:
         tb.log.info("All interface 0 scheduler blocks")
@@ -933,6 +950,8 @@ async def full_nic_test(dut):
         for block in tb.driver.interfaces[0].sched_blocks[1:]:
             await block.schedulers[0].rb.write_dword(mqnic.MQNIC_RB_SCHED_RR_REG_CTRL, 0x00000000)
             await tb.driver.interfaces[0].set_rx_queue_map_indir_table(block.index, 0, 0)
+
+    # -------------------- Another kind of test? --------------------
 
     if tb.driver.interfaces[0].if_feature_lfc:
         tb.log.info("Test LFC pause frame RX")

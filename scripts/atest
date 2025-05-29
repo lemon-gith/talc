@@ -1,0 +1,27 @@
+#!/bin/bash
+
+usage() {
+    echo "atest [-a <arg>]" 1>&2
+    exit 0
+}
+
+# TODO: write a test script for coruntb
+# could rewrite this in Python, since I'll probably be calling a Python builder
+atest() {
+    local OPTIND o a
+    while getopts ":a:" o; do
+        case "${o}" in
+            a)
+                a="${OPTARG}"
+                ;;
+            *)
+                foo_usage
+                ;;
+        esac
+    done
+    shift $((OPTIND-1))
+
+    echo "a: [${a}], non-option arguments: $*"
+}
+
+atest "$@"

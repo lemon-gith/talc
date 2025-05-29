@@ -24,17 +24,24 @@ RUN . venv/bin/activate && pip install cocotb cocotbext-axi cocotbext-eth cocotb
 COPY ./nics/corundum /corundum
 # TODO: possibly do similar extractions as in corunsim to reduce the complexity of the system later?
 
+# add custom scripts to directory in PATH
+COPY ./scripts /usr/local/bin
+RUN chmod +x /usr/local/bin/*
+
+# to update/add scripts, you can use the following command:
+# docker cp ./scripts/<filename> cortb:/usr/local/bin/
+
 ENTRYPOINT [ "sleep", "infinity" ]
 
 # to get our nice mounted directory, which should make working on this easier,
 # make sure to run the `docker run` command below
 
 # run from repo root:
-# docker build -t corunacc -f containers/corunacc.Dockerfile .
-# docker run -d --name coracc --mount type=bind,src=./src/corunacc/tb,dst=/corundum/fpga/app/template/tb/corunacc corunacc
-# docker exec -it coracc bash
+# docker build -t coruntb -f containers/coruntb.Dockerfile .
+# docker run -d --name cortb --mount type=bind,src=./src/coruntb/tb,dst=/corundum/fpga/app/template/tb/coruntb coruntb
+# docker exec -it cortb bash
 
 # source /corundum/venv/bin/activate
-# cd fpga/app/dma_bench/tb/corunacc
+# cd fpga/app/dma_bench/tb/coruntb
 #
 # then you can run make to run the testbench with `make`

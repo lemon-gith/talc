@@ -645,6 +645,11 @@ async def dma_bench_test(tb: TB):
 
         await Timer(1000, 'ns')
 
+
+async def single_packet_test(tb: TB):
+    """
+    TODO: write this up
+    """
     tb.log.info("Send and receive single packet")
 
     for interface in tb.driver.interfaces:
@@ -663,6 +668,11 @@ async def dma_bench_test(tb: TB):
         if interface.if_feature_rx_csum:
             assert pkt.rx_checksum == ~scapy.utils.checksum(bytes(pkt.data[14:])) & 0xffff
 
+
+async def checksum_test(tb: TB):
+    """
+    TODO: nyom
+    """
     tb.log.info("RX and TX checksum tests")
 
     payload = bytes([x % 256 for x in range(256)])
@@ -671,6 +681,7 @@ async def dma_bench_test(tb: TB):
     udp = UDP(sport=1, dport=2)
     test_pkt = eth / ip / udp / payload
 
+    # if the tx iface impl transmission csum for UDP packet, compute it
     if tb.driver.interfaces[0].if_feature_tx_csum:
         test_pkt2 = test_pkt.copy()
         test_pkt2[UDP].chksum = scapy.utils.checksum(bytes(test_pkt2[UDP]))
@@ -687,9 +698,48 @@ async def dma_bench_test(tb: TB):
     pkt = await tb.driver.interfaces[0].recv()
 
     tb.log.info("Packet: %s", pkt)
+    # if the rx iface impl transmission csum for UDP packet, check it
     if tb.driver.interfaces[0].if_feature_rx_csum:
         assert pkt.rx_checksum == ~scapy.utils.checksum(bytes(pkt.data[14:])) & 0xffff
+
+    # validate that received ETH packet would build to original packet
     assert Ether(pkt.data).build() == test_pkt.build()
+
+
+@cocotb.test
+async def full_nic_test(dut):
+    # Initialise TestBench DUT instance
+    tb = TB(dut, msix_count=2**len(dut.core_pcie_inst.irq_index))
+
+    await tb.init()
+
+    tb.log.info("Init driver")
+    await tb.driver.init_pcie_dev(tb.rc.find_device(tb.dev.functions[0].pcie_id))
+    for interface in tb.driver.interfaces:
+        await interface.open()
+
+    # enable queues
+    tb.log.info("Enable queues")
+    for interface in tb.driver.interfaces:
+        await interface.sched_blocks[0].schedulers[0].rb.write_dword(mqnic.MQNIC_RB_SCHED_RR_REG_CTRL, 0x00000001)
+        for k in range(len(interface.txq)):
+            await interface.sched_blocks[0].schedulers[0].hw_regs.write_dword(4*k, 0x00000003)
+
+    # wait for all writes to complete
+    await tb.driver.hw_regs.read_dword(0)
+    tb.log.info("Init complete")
+
+    # -------------------- All iface, single packet test --------------------
+
+    tb.log.info("Send and receive single packet")
+    await single_packet_test(tb)
+    # ^this test actually also tests that every interface can do this
+    # similarly to the All Interfaces test, a few tests down
+
+    # -------------------- Another kind of test? --------------------
+
+    tb.log.info("RX and TX checksum tests")
+    await checksum_test(tb)
 
     tb.log.info("Queue mapping offset test")
 

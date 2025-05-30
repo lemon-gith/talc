@@ -22,7 +22,11 @@ RUN . venv/bin/activate && pip install cocotb cocotbext-axi cocotbext-eth cocotb
 
 # copy over corundum files
 COPY ./nics/corundum /corundum
-# TODO: possibly do similar extractions as in corunsim to reduce the complexity of the system later?
+# TODO: possibly do similar extractions as in corunsim to reduce complexity?
+# As in, strip the system down to just what we need?
+# Since I'm maintaining the overall file structure,
+# can just give short instruction on how to port to full repo
+# in order to be able to put it onto one of the supported FPGA boards
 
 # add custom scripts to directory in PATH
 COPY ./scripts /usr/local/bin

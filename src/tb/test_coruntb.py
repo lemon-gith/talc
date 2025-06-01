@@ -920,40 +920,37 @@ async def q_map_rss_mask_test(tb: TB):
     for k in range(4):
         await tb.driver.interfaces[0].set_rx_queue_map_indir_table(0, k, k)
 
-    tb.loopback_enable = True
+    pkts = []
+    count = 64
 
-    queues = set()
-
-    for k in range(64):
-        payload = bytes([x % 256 for x in range(256)])
-        eth = Ether(src='5A:51:52:53:54:55', dst='DA:D1:D2:D3:D4:D5')
-        ip = IP(src='192.168.1.100', dst='192.168.1.101')
+    payload = bytes([x % 256 for x in range(256)])
+    eth = Ether(src='5A:51:52:53:54:55', dst='DA:D1:D2:D3:D4:D5')
+    ip = IP(src='192.168.1.100', dst='192.168.1.101')
+    
+    for k in range(count):
         udp = UDP(sport=1, dport=k+0)
         test_pkt = eth / ip / udp / payload
 
         if tb.driver.interfaces[0].if_feature_tx_csum:
-            test_pkt2 = test_pkt.copy()
-            test_pkt2[UDP].chksum = scapy.utils.checksum(bytes(test_pkt2[UDP]))
+            test_pkt = test_pkt.copy()
+            test_pkt[UDP].chksum = scapy.utils.checksum(bytes(test_pkt[UDP]))
 
-            await tb.driver.interfaces[0].start_xmit(test_pkt2.build(), 0, 34, 6)
-        else:
-            await tb.driver.interfaces[0].start_xmit(test_pkt.build(), 0)
+        pkts.append(test_pkt.build())
 
-    for k in range(64):
-        pkt = await tb.driver.interfaces[0].recv()
+    csum_start, csum_offset = None, None
+    if tb.driver.interfaces[0].if_feature_tx_csum:
+        csum_start, csum_offset = 34, 6
 
-        if pkt is None:
-            raise ValueError("Packet is None")
+    queues = await simple_packet_firehose(
+        tb, tb.driver.interfaces[0], count,
+        queues=set(), assert_data=False, data=pkts,
+        csum_start=csum_start, csum_offset=csum_offset
+    )
 
-        tb.log.info("Packet: %s", pkt)
-        if tb.driver.interfaces[0].if_feature_rx_csum:
-            assert pkt.rx_checksum == ~scapy.utils.checksum(bytes(pkt.data[14:])) & 0xffff
-
-        queues.add(pkt.queue)
+    if queues is None:
+        raise ValueError("SPF returned a queues object as None")
 
     assert len(queues) == 4
-
-    tb.loopback_enable = False
 
     # reset rss mask
     await tb.driver.interfaces[0].set_rx_queue_map_rss_mask(0, 0)

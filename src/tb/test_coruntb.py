@@ -612,7 +612,7 @@ async def simple_packet_firehose(
     return queues
 
 
-async def dma_bench_test(tb: TB):
+async def dma_bench_sn_test(tb: TB):
     """
     Just the DMA bench test extracted from\\
     `/fpga/app/dma_bench/tb/test_mqnic_core_pcie_us.py`
@@ -828,7 +828,7 @@ async def dma_bench_test(tb: TB):
         await Timer(Decimal(1000), 'ns')
 
 
-async def single_packet_test(tb: TB, interface: mqnic.Interface):
+async def single_packet_sn_test(tb: TB, interface: mqnic.Interface):
     """
     TODO: write this up
     """
@@ -852,7 +852,7 @@ async def single_packet_test(tb: TB, interface: mqnic.Interface):
         )
 
 
-async def basic_checksum_test(tb: TB):
+async def basic_checksum_sn_test(tb: TB):
     """
     TODO: nyom
     """
@@ -893,7 +893,7 @@ async def basic_checksum_test(tb: TB):
     assert Ether(pkt.data).build() == test_pkt.build()
 
 
-async def queue_map_offset_test(tb: TB):
+async def queue_map_offset_sn_test(tb: TB):
     for k in range(4):
         await tb.driver.interfaces[0].set_rx_queue_map_indir_table(0, 0, k)
 
@@ -911,7 +911,7 @@ async def queue_map_offset_test(tb: TB):
     await tb.driver.interfaces[0].set_rx_queue_map_indir_table(0, 0, 0)
 
 
-async def q_map_rss_mask_test(tb: TB):
+async def q_map_rss_mask_sn_test(tb: TB):
     await tb.driver.interfaces[0].set_rx_queue_map_rss_mask(0, 0x00000003)
 
     for k in range(4):
@@ -953,7 +953,7 @@ async def q_map_rss_mask_test(tb: TB):
     await tb.driver.interfaces[0].set_rx_queue_map_rss_mask(0, 0)
 
 
-async def all_interfaces_test(tb):
+async def all_interfaces_sn_test(tb):
     count = 64
 
     pkts = [bytearray([(x+k) % 256 for x in range(1514)]) for k in range(count)]
@@ -981,7 +981,7 @@ async def all_interfaces_test(tb):
     tb.loopback_enable = False
 
 
-async def all_scheduler_blocks_test(tb: TB, interface: mqnic.Interface):
+async def all_scheduler_blocks_sn_test(tb: TB, interface: mqnic.Interface):
     for block in interface.sched_blocks:
         await block.schedulers[0].rb.write_dword(mqnic.MQNIC_RB_SCHED_RR_REG_CTRL, 0x00000001)
         await block.interface.set_rx_queue_map_indir_table(block.index, 0, block.index)
@@ -1027,7 +1027,7 @@ async def all_scheduler_blocks_test(tb: TB, interface: mqnic.Interface):
         await interface.set_rx_queue_map_indir_table(block.index, 0, 0)
 
 
-async def lfc_pause_frame_receiver_test(tb: TB, interface: mqnic.Interface):
+async def lfc_pause_frame_receiver_sn_test(tb: TB, interface: mqnic.Interface):
     await interface.ports[0].set_lfc_ctrl(
         mqnic.MQNIC_PORT_LFC_CTRL_TX_LFC_EN 
         | mqnic.MQNIC_PORT_LFC_CTRL_RX_LFC_EN
@@ -1046,7 +1046,7 @@ async def lfc_pause_frame_receiver_test(tb: TB, interface: mqnic.Interface):
 
 
 @cocotb.test
-async def full_nic_test(dut):
+async def single_nic_tests(dut):
     # Initialise TestBench DUT instance
     tb = TB(dut, msix_count=2**len(dut.core_pcie_inst.irq_index))
 
@@ -1074,26 +1074,26 @@ async def full_nic_test(dut):
     tb.log.info("Send and receive single packet")
 
     for interface in tb.driver.interfaces:
-        await single_packet_test(tb, interface)
+        await single_packet_sn_test(tb, interface)
 
     # -------------------- Basic Rx/Tx Checksum Test --------------------
 
     tb.log.info("RX and TX checksum tests")
 
-    await basic_checksum_test(tb)
+    await basic_checksum_sn_test(tb)
 
     # -------------------- Queue Mapping Offset Test --------------------
 
     tb.log.info("Queue mapping offset test")
 
-    await queue_map_offset_test(tb)
+    await queue_map_offset_sn_test(tb)
 
     # -------------------- Queue mapping RSS mask test --------------------
 
     if tb.driver.interfaces[0].if_feature_rss:
         tb.log.info("Queue mapping RSS mask test")
 
-        await q_map_rss_mask_test(tb)
+        await q_map_rss_mask_sn_test(tb)
 
     # -------------------- Packet test: Many Small --------------------
 
@@ -1118,26 +1118,26 @@ async def full_nic_test(dut):
     if len(tb.driver.interfaces) > 1:
         tb.log.info("All interfaces")
 
-        await all_interfaces_test(tb)
+        await all_interfaces_sn_test(tb)
 
     # ------------ All Scheduler Blocks Test: Interface 0 ------------
 
     if len(tb.driver.interfaces[0].sched_blocks) > 1:
         tb.log.info("All interface 0 scheduler blocks")
 
-        await all_scheduler_blocks_test(tb, tb.driver.interfaces[0])
+        await all_scheduler_blocks_sn_test(tb, tb.driver.interfaces[0])
 
     # ------------------- Rx under paused LFC Test -------------------
 
     if tb.driver.interfaces[0].if_feature_lfc:
         tb.log.info("Test LFC pause frame RX")
 
-        await lfc_pause_frame_receiver_test(tb, tb.driver.interfaces[0])
+        await lfc_pause_frame_receiver_sn_test(tb, tb.driver.interfaces[0])
 
     # -------------------- Another kind of test --------------------
     
     # TODO: do I want this or not?
-    # await dma_bench_test(tb)
+    # await dma_bench_sn_test(tb)
 
     # ------------------------- Read Stats -------------------------
 

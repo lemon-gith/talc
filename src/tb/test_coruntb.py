@@ -1,6 +1,12 @@
 # SPDX-License-Identifier: BSD-2-Clause-Views
 # Copyright (c) 2021-2023 The Regents of the University of California
 
+# typing imports
+from decimal import Decimal
+from cocotbext.axi import MemoryRegion
+
+
+# module imports
 import logging
 import os
 import struct
@@ -286,7 +292,7 @@ class TB(object):
         core_inst = dut.core_pcie_inst.core_inst
 
         # Ethernet
-        self.port_mac = []
+        self.port_mac: list[EthMac] = []
 
         eth_int_if_width = len(core_inst.m_axis_tx_tdata) / len(core_inst.m_axis_tx_tvalid)
         eth_clock_period = 6.4
@@ -410,7 +416,7 @@ class TB(object):
             ram.write_if.reset.setimmediatevalue(1)
 
         await FallingEdge(self.dut.rst)
-        await Timer(100, 'ns')
+        await Timer(Decimal(100), 'ns')
 
         await RisingEdge(self.dut.clk)
         await RisingEdge(self.dut.clk)
@@ -447,8 +453,12 @@ async def dma_bench_test(tb: TB):
 
     dma_bench_rb = app_reg_blocks.find(0x12348101, 0x00000100)
 
-    mem = tb.rc.mem_pool.alloc_region(16*1024*1024)
-    mem_base = mem.get_absolute_address(0)
+    if dma_bench_rb is None:
+        raise ValueError("dma_bench_rb is None")
+
+    mem: MemoryRegion = tb.rc.mem_pool.alloc_region(16*1024*1024)
+    # I can't really add annotations to return type of the library fn
+    mem_base: int = mem.get_absolute_address(0) # type: ignore
 
     tb.log.info("Test DMA")
 
@@ -462,7 +472,7 @@ async def dma_bench_test(tb: TB):
     await dma_bench_rb.write_dword(0x110, 0x400)
     await dma_bench_rb.write_dword(0x114, 0xAA)
 
-    await Timer(2000, 'ns')
+    await Timer(Decimal(2000), 'ns')
 
     # read status
     val = await dma_bench_rb.read_dword(0x000118)
@@ -476,7 +486,7 @@ async def dma_bench_test(tb: TB):
     await dma_bench_rb.write_dword(0x210, 0x400)
     await dma_bench_rb.write_dword(0x214, 0x55)
 
-    await Timer(2000, 'ns')
+    await Timer(Decimal(2000), 'ns')
 
     # read status
     val = await dma_bench_rb.read_dword(0x000218)
@@ -496,7 +506,7 @@ async def dma_bench_test(tb: TB):
     await dma_bench_rb.write_dword(0x210, 0x4)
     await dma_bench_rb.write_dword(0x214, 0x800000AA)
 
-    await Timer(2000, 'ns')
+    await Timer(Decimal(2000), 'ns')
 
     # read status
     val = await dma_bench_rb.read_dword(0x000218)
@@ -561,7 +571,7 @@ async def dma_bench_test(tb: TB):
 
     for k in range(10):
         cnt = await dma_bench_rb.read_dword(0x318)
-        await Timer(1000, 'ns')
+        await Timer(Decimal(1000), 'ns')
         if cnt == 0:
             break
 
@@ -603,7 +613,7 @@ async def dma_bench_test(tb: TB):
 
     for k in range(10):
         cnt = await dma_bench_rb.read_dword(0x418)
-        await Timer(1000, 'ns')
+        await Timer(Decimal(1000), 'ns')
         if cnt == 0:
             break
 
@@ -629,7 +639,7 @@ async def dma_bench_test(tb: TB):
         await dram_test_rb.write_dword(0x20, 0x00000002)
         await dram_test_rb.write_dword(0x20, 0x00000202)
 
-        await Timer(100, 'ns')
+        await Timer(Decimal(100), 'ns')
 
         # enable FIFO
         await dram_test_rb.write_dword(0x20, 0x00000001)
@@ -645,7 +655,7 @@ async def dma_bench_test(tb: TB):
             if val == 0:
                 break
 
-        await Timer(1000, 'ns')
+        await Timer(Decimal(1000), 'ns')
 
 
 async def single_packet_test(tb: TB):
@@ -667,8 +677,12 @@ async def single_packet_test(tb: TB):
         pkt = await interface.recv()
 
         tb.log.info("Packet: %s", pkt)
-        if interface.if_feature_rx_csum:
-            assert pkt.rx_checksum == ~scapy.utils.checksum(bytes(pkt.data[14:])) & 0xffff
+        if interface.if_feature_rx_csum and pkt is not None:
+            assert (
+                pkt.rx_checksum == ~scapy.utils.checksum(
+                    bytes(pkt.data[14:])
+                ) & 0xffff
+            )
 
 
 async def checksum_test(tb: TB):
@@ -692,12 +706,16 @@ async def checksum_test(tb: TB):
     else:
         await tb.driver.interfaces[0].start_xmit(test_pkt.build(), 0)
 
+    # allegedly returns an ETH frame
     pkt = await tb.port_mac[0].tx.recv()
     tb.log.info("Packet: %s", pkt)
 
     await tb.port_mac[0].rx.send(pkt)
 
     pkt = await tb.driver.interfaces[0].recv()
+
+    if pkt is None:
+        raise ValueError("Packet is None")
 
     tb.log.info("Packet: %s", pkt)
     # if the rx iface impl transmission csum for UDP packet, check it
@@ -716,10 +734,11 @@ async def full_nic_test(dut):
     await tb.init()
 
     tb.log.info("Init driver")
-    await tb.driver.init_pcie_dev(tb.rc.find_device(tb.dev.functions[0].pcie_id))
+    if (device := tb.rc.find_device(tb.dev.functions[0].pcie_id)) is not None:
+        await tb.driver.init_pcie_dev(device)
     for interface in tb.driver.interfaces:
         await interface.open()
-
+    
     # enable queues
     tb.log.info("Enable queues")
     for interface in tb.driver.interfaces:
@@ -758,6 +777,9 @@ async def full_nic_test(dut):
 
         pkt = await tb.driver.interfaces[0].recv()
 
+        if pkt is None:
+            raise ValueError("Packet is None")
+
         tb.log.info("Packet: %s", pkt)
         if tb.driver.interfaces[0].if_feature_rx_csum:
             assert pkt.rx_checksum == ~scapy.utils.checksum(bytes(pkt.data[14:])) & 0xffff
@@ -770,6 +792,8 @@ async def full_nic_test(dut):
     # -------------------- Another kind of test? --------------------
     # no, wait, this is a reconfiguration from ^2,
 
+    # keep the config in here, since I don't think it'd be nice to add to the fn
+    
     if tb.driver.interfaces[0].if_feature_rss:
         tb.log.info("Queue mapping RSS mask test")
 
@@ -800,6 +824,9 @@ async def full_nic_test(dut):
         for k in range(64):
             pkt = await tb.driver.interfaces[0].recv()
 
+            if pkt is None:
+                raise ValueError("Packet is None")
+
             tb.log.info("Packet: %s", pkt)
             if tb.driver.interfaces[0].if_feature_rx_csum:
                 assert pkt.rx_checksum == ~scapy.utils.checksum(bytes(pkt.data[14:])) & 0xffff
@@ -810,6 +837,7 @@ async def full_nic_test(dut):
 
         tb.loopback_enable = False
 
+        # reset rss mask
         await tb.driver.interfaces[0].set_rx_queue_map_rss_mask(0, 0)
 
     # -------------------- Another kind of test? --------------------
@@ -827,6 +855,9 @@ async def full_nic_test(dut):
 
     for k in range(count):
         pkt = await tb.driver.interfaces[0].recv()
+
+        if pkt is None:
+            raise ValueError("Packet is None")
 
         tb.log.info("Packet: %s", pkt)
         assert pkt.data == pkts[k]
@@ -851,6 +882,9 @@ async def full_nic_test(dut):
     for k in range(count):
         pkt = await tb.driver.interfaces[0].recv()
 
+        if pkt is None:
+            raise ValueError("Packet is None")
+
         tb.log.info("Packet: %s", pkt)
         assert pkt.data == pkts[k]
         if tb.driver.interfaces[0].if_feature_rx_csum:
@@ -873,6 +907,9 @@ async def full_nic_test(dut):
 
     for k in range(count):
         pkt = await tb.driver.interfaces[0].recv()
+
+        if pkt is None:
+            raise ValueError("Packet is None")
 
         tb.log.info("Packet: %s", pkt)
         assert pkt.data == pkts[k]
@@ -897,6 +934,9 @@ async def full_nic_test(dut):
 
         for k in range(count):
             pkt = await tb.driver.interfaces[k % len(tb.driver.interfaces)].recv()
+
+            if pkt is None:
+                raise ValueError("Packet is None")
 
             tb.log.info("Packet: %s", pkt)
             assert pkt.data == pkts[k]
@@ -935,6 +975,9 @@ async def full_nic_test(dut):
 
         for k in range(count):
             pkt = await tb.driver.interfaces[0].recv()
+
+            if pkt is None:
+                raise ValueError("Packet is None")
 
             tb.log.info("Packet: %s", pkt)
             # assert pkt.data == pkts[k]
@@ -975,6 +1018,9 @@ async def full_nic_test(dut):
         for k in range(count):
             pkt = await tb.driver.interfaces[0].recv()
 
+            if pkt is None:
+                raise ValueError("Packet is None")
+
             tb.log.info("Packet: %s", pkt)
             assert pkt.data == pkts[k]
             if tb.driver.interfaces[0].if_feature_rx_csum:
@@ -988,7 +1034,7 @@ async def full_nic_test(dut):
 
     tb.log.info("Read statistics counters")
 
-    await Timer(2000, 'ns')
+    await Timer(Decimal(2000), 'ns')
 
     lst = []
 

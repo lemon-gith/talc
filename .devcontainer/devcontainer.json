@@ -16,6 +16,13 @@
   ],
   "workspaceMount": "source=${localWorkspaceFolder}/src/tb/,target=/corundum/fpga/app/template/tb/coruntb,type=bind",
   "workspaceFolder": "/corundum",
+  "mounts": [
+    {  // add vscode config files to container, for devcontainer
+      "source": "${localWorkspaceFolder}/containers/patches/corundum/tb/.vscode/",
+      "target": "/corundum/.vscode/",
+      "type": "bind"
+    }
+  ],
 
   "customizations": {
     "vscode": {

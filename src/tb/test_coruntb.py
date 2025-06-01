@@ -4,6 +4,7 @@
 # typing imports
 from decimal import Decimal
 from cocotbext.axi import MemoryRegion
+from scapy.packet import Packet
 
 
 # module imports
@@ -685,7 +686,7 @@ async def single_packet_test(tb: TB):
             )
 
 
-async def checksum_test(tb: TB):
+async def basic_checksum_test(tb: TB):
     """
     TODO: nyom
     """
@@ -760,7 +761,8 @@ async def full_nic_test(dut):
     # -------------------- Another kind of test? --------------------
 
     tb.log.info("RX and TX checksum tests")
-    await checksum_test(tb)
+
+    await basic_checksum_test(tb)
 
     # -------------------- Another kind of test? --------------------
 
@@ -787,6 +789,7 @@ async def full_nic_test(dut):
 
     tb.loopback_enable = False
 
+    # reset indirection table
     await tb.driver.interfaces[0].set_rx_queue_map_indir_table(0, 0, 0)
 
     # -------------------- Another kind of test? --------------------
@@ -939,9 +942,13 @@ async def full_nic_test(dut):
                 raise ValueError("Packet is None")
 
             tb.log.info("Packet: %s", pkt)
+
             assert pkt.data == pkts[k]
+
             if tb.driver.interfaces[0].if_feature_rx_csum:
-                assert pkt.rx_checksum == ~scapy.utils.checksum(bytes(pkt.data[14:])) & 0xffff
+                assert pkt.rx_checksum == ~scapy.utils.checksum(
+                    bytes(pkt.data[14:])
+                ) & 0xffff
 
         tb.loopback_enable = False
 

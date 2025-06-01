@@ -19,9 +19,6 @@ import scapy.utils
 from scapy.layers.l2 import Ether
 from scapy.layers.inet import IP, UDP
 
-import cocotb_test.simulator
-import pytest
-
 import cocotb
 from cocotb.log import SimLog
 from cocotb.clock import Clock

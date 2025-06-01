@@ -474,6 +474,117 @@ def loopback_enabled(tb: TB, enabled: bool = True):
     tb.loopback_enable = False
 
 
+# abstract multiple tests into this one heavily-parameterised function
+async def simple_packet_firehose(
+    tb: TB, interface: mqnic.Interface, count: int = 0, size: int = 0,
+    tx_ring: int = 0, enable_loopback: bool = True,
+    csum_start: int | None = None, csum_offset: int | None = None,
+    header_stack: Packet | None = None,
+    data: list[bytearray] | None = None, assert_data: bool = True,
+    queues: set[int] | None = None
+):
+    """Send different configurations of packet barrages over desired interface
+
+    Crucially, this only handles simple, linear firehosing operations, e.g.
+    it doesn't support send-all then recv-all, only (send+recv)-all
+    (cf. Limitations section for more info.)
+
+    Parameters
+    ----------
+    tb: TB
+        nyom
+
+    interface: mqnic.Interface
+        nyom
+
+    count: int
+        how many packets should be sent?
+
+    size: int
+        and how large do you want those packets?
+
+    enable_loopback: bool
+        should automatic MAC loopback be enabled?\n
+        // TODO: should we keep this? Add other parameters
+
+    Usage
+    -----
+    ```python
+    await simple_packet_firehose(tb, tb.driver.interfaces[0], 64, 1514)
+    ```
+
+    or
+
+    ```python
+    eth = Ether(src='5A:51:52:53:54:55', dst='DA:D1:D2:D3:D4:D5')
+    ip = IP(src='192.168.1.100', dst='192.168.1.101')
+    udp = UDP(sport=1, dport=42)
+
+    for iface in tb.driver.interfaces:
+        await simple_packet_firehose(
+            tb, iface, 64, 1514,
+            header_stack=(eth / ip / udp)
+        )
+    ```
+
+    Limitations
+    -----------
+    - `header_stack` cannot use variable values, e.g. IP ranges, port ranges
+
+    DESIGNED FOR THIS:
+    ```python
+    for i in range(fred):
+        send()
+        recv()
+        assert
+    ```
+    CANNOT DO THIS:
+    ```python
+    for i in range(fred):
+        send()
+
+    for i in range(fred):
+        recv()
+        assert
+    ```
+    """
+    if data is None:
+        data = [
+            bytearray([(x+k) % 256 for x in range(size)]) for k in range(count)
+        ]
+
+    if header_stack is None:
+        pkts = data
+    else:
+        pkts = [(header_stack / payload).build() for payload in data]
+
+    # commence firehosing
+    with loopback_enabled(tb, enable_loopback):
+        for pkt in pkts:
+            await interface.start_xmit(pkt, tx_ring, csum_start, csum_offset)
+
+        for k in range(count):
+            pkt = await interface.recv()
+
+            if pkt is None:
+                raise ValueError("Packet is None")
+
+            tb.log.info("Packet: %s", pkt)
+
+            if assert_data:
+                assert pkt.data == pkts[k]
+
+            if interface.if_feature_rx_csum:
+                assert pkt.rx_checksum == ~scapy.utils.checksum(
+                    bytes(pkt.data[14:])
+                ) & 0xffff
+
+            if queues is not None:
+                queues.add(pkt.queue)
+
+    return queues
+
+
 async def dma_bench_test(tb: TB):
     """
     Just the DMA bench test extracted from\\
@@ -799,26 +910,18 @@ async def full_nic_test(dut):
 
     tb.log.info("Queue mapping offset test")
 
-    data = bytearray([x % 256 for x in range(1024)])
-
-    tb.loopback_enable = True
-
     for k in range(4):
         await tb.driver.interfaces[0].set_rx_queue_map_indir_table(0, 0, k)
 
-        await tb.driver.interfaces[0].start_xmit(data, 0)
+        pkt_queue = await simple_packet_firehose(
+            tb, tb.driver.interfaces[0], 1, 1024,
+            assert_data=False, queues=set()
+        )
+        if pkt_queue is None:
+            raise ValueError("returned queue was None")
 
-        pkt = await tb.driver.interfaces[0].recv()
-
-        if pkt is None:
-            raise ValueError("Packet is None")
-
-        tb.log.info("Packet: %s", pkt)
-        if tb.driver.interfaces[0].if_feature_rx_csum:
-            assert pkt.rx_checksum == ~scapy.utils.checksum(bytes(pkt.data[14:])) & 0xffff
-        assert pkt.queue == k
-
-    tb.loopback_enable = False
+        # pkt_queue should only have one element, if k is that element, good
+        assert k in pkt_queue
 
     # reset indirection table
     await tb.driver.interfaces[0].set_rx_queue_map_indir_table(0, 0, 0)
@@ -878,79 +981,19 @@ async def full_nic_test(dut):
 
     tb.log.info("Multiple small packets")
 
-    count = 64
-
-    pkts = [bytearray([(x+k) % 256 for x in range(60)]) for k in range(count)]
-
-    tb.loopback_enable = True
-
-    for p in pkts:
-        await tb.driver.interfaces[0].start_xmit(p, 0)
-
-    for k in range(count):
-        pkt = await tb.driver.interfaces[0].recv()
-
-        if pkt is None:
-            raise ValueError("Packet is None")
-
-        tb.log.info("Packet: %s", pkt)
-        assert pkt.data == pkts[k]
-        if tb.driver.interfaces[0].if_feature_rx_csum:
-            assert pkt.rx_checksum == ~scapy.utils.checksum(bytes(pkt.data[14:])) & 0xffff
-
-    tb.loopback_enable = False
+    await simple_packet_firehose(tb, tb.driver.interfaces[0], 64, 60)
 
     # -------------------- Another kind of test? --------------------
 
     tb.log.info("Multiple large packets")
 
-    count = 64
-
-    pkts = [bytearray([(x+k) % 256 for x in range(1514)]) for k in range(count)]
-
-    tb.loopback_enable = True
-
-    for p in pkts:
-        await tb.driver.interfaces[0].start_xmit(p, 0)
-
-    for k in range(count):
-        pkt = await tb.driver.interfaces[0].recv()
-
-        if pkt is None:
-            raise ValueError("Packet is None")
-
-        tb.log.info("Packet: %s", pkt)
-        assert pkt.data == pkts[k]
-        if tb.driver.interfaces[0].if_feature_rx_csum:
-            assert pkt.rx_checksum == ~scapy.utils.checksum(bytes(pkt.data[14:])) & 0xffff
-
-    tb.loopback_enable = False
+    await simple_packet_firehose(tb, tb.driver.interfaces[0], 64, 1514)
 
     # -------------------- Similar test to above --------------------
 
     tb.log.info("Jumbo frames")
 
-    count = 64
-
-    pkts = [bytearray([(x+k) % 256 for x in range(9014)]) for k in range(count)]
-
-    tb.loopback_enable = True
-
-    for p in pkts:
-        await tb.driver.interfaces[0].start_xmit(p, 0)
-
-    for k in range(count):
-        pkt = await tb.driver.interfaces[0].recv()
-
-        if pkt is None:
-            raise ValueError("Packet is None")
-
-        tb.log.info("Packet: %s", pkt)
-        assert pkt.data == pkts[k]
-        if tb.driver.interfaces[0].if_feature_rx_csum:
-            assert pkt.rx_checksum == ~scapy.utils.checksum(bytes(pkt.data[14:])) & 0xffff
-
-    tb.loopback_enable = False
+    await simple_packet_firehose(tb, tb.driver.interfaces[0], 64, 9014)
 
     # --------------- Same test as above^2, but on all ifs ---------------
 
@@ -1044,27 +1087,7 @@ async def full_nic_test(dut):
 
         await tb.port_mac[0].rx.send(bytes(lfc_xoff))
 
-        count = 16
-
-        pkts = [bytearray([(x+k) % 256 for x in range(1514)]) for k in range(count)]
-
-        tb.loopback_enable = True
-
-        for p in pkts:
-            await tb.driver.interfaces[0].start_xmit(p, 0)
-
-        for k in range(count):
-            pkt = await tb.driver.interfaces[0].recv()
-
-            if pkt is None:
-                raise ValueError("Packet is None")
-
-            tb.log.info("Packet: %s", pkt)
-            assert pkt.data == pkts[k]
-            if tb.driver.interfaces[0].if_feature_rx_csum:
-                assert pkt.rx_checksum == ~scapy.utils.checksum(bytes(pkt.data[14:])) & 0xffff
-
-        tb.loopback_enable = False
+        await simple_packet_firehose(tb, tb.driver.interfaces[0], 16, 1514)
 
     # -------------------- Another kind of test --------------------
     # TODO: do I want this or not?

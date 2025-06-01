@@ -6,6 +6,8 @@ from decimal import Decimal
 from cocotbext.axi import MemoryRegion
 from scapy.packet import Packet
 
+# utility imports
+from contextlib import contextmanager
 
 # module imports
 import logging
@@ -441,6 +443,35 @@ class TB(object):
                 for mac in self.port_mac:
                     if not mac.tx.empty():
                         await mac.rx.send(await mac.tx.recv())
+
+
+@contextmanager
+def loopback_enabled(tb: TB, enabled: bool = True):
+    """temporary loopback enabling utility
+
+    Parameters
+    ----------
+    tb: TB
+        the testbench instance for which you want loopback temporarily enabled
+    enabled: bool
+        should this be enabled? useful for parameterised testing
+
+    Returns
+    -------
+    enabled: bool
+        because I need to yield something, since this is technically a generator
+
+    Usage
+    -----
+    with loopback_enabled(tb):
+        ...
+    """
+    tb.loopback_enable = enabled
+
+    # go back to context body
+    yield enabled
+
+    tb.loopback_enable = False
 
 
 async def dma_bench_test(tb: TB):

@@ -1164,4 +1164,66 @@ async def single_nic_tests(dut):
     await RisingEdge(dut.clk)
 
 
+@cocotb.test
+async def exfiltrate_tests(_):
+    """
+    A function used to extract testnames that follow the pattern:
+
+    `*_test`
+
+    This includes imported functions, so long as they're explicitly named, e.g.
+    ```
+    from tests.test import yet_another_sn_test  # OPT = sn
+    from tests.test import my_awesome_test  # OPT = other
+    ```
+
+    Usage
+    -----
+    In this directory (of this file)
+    ```
+    TESTCASE=exfiltrate_tests make\\
+        | grep "^available tests (OPT):"\\
+            | awk '{print $4}'
+    ```
+
+    `OPT` refers to one of these options:
+    - top: only the two top-level tests - single_nic_tests and multi_nic_tests
+    - sn: all single nic tests
+    - mn: all multi nic tests
+    - other: mostly for debugging, but anything else that fits
+
+    If you want combinations of these, grep for just "^available tests",
+    and write to a tmp file, then perform multiple post-greps on these
+    """
+    blacklist = {
+        "cocotb_test",  # it's a module name
+        "dma_bench_test",  # that test doesn't work here, yet
+        "exfiltrate_tests"  # not really a test function
+    }
+    top_level_tests = ["single_nic_tests", "multi_nic_tests"]
+
+    tests: list[str] = []
+    for key in sys.modules[__name__].__dict__.keys():
+        if key[-5:] == "_test":
+            if key not in blacklist:
+                tests.append(key)
+
+    sn_tests = []
+    mn_tests = []
+    other = []
+    for test in tests:
+        match test[-8:-5]:
+            case "_sn":
+                sn_tests.append(test)
+            case "_mn":
+                mn_tests.append(test)
+            case _:
+                other.append(test)
+
+    print("available tests (top):", ','.join(top_level_tests))
+    print("available tests (sn):", ','.join(sn_tests))
+    print("available tests (mn):", ','.join(mn_tests))
+    print("available tests (other):", ','.join(other))
+
+
 # cocotb-test

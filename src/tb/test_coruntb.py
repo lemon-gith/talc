@@ -492,20 +492,45 @@ async def simple_packet_firehose(
     Parameters
     ----------
     tb: TB
-        nyom
+        the testbench instance being used for the testing
 
     interface: mqnic.Interface
-        nyom
+        the interface that you would like to firehose packets from
 
-    count: int
+    count: int = 0
         how many packets should be sent?
+        default value of 0 will produce no packets
 
-    size: int
+    size: int = 0
         and how large do you want those packets?
+        default value of 0 produces empty packets
 
-    enable_loopback: bool
-        should automatic MAC loopback be enabled?\n
-        // TODO: should we keep this? Add other parameters
+    enable_loopback: bool = True
+        should automatic MAC loopback be enabled?
+        default value of True will keep this enabled,
+        I'm not too sure why you'd want it disabled...
+
+    csum_start: int | None = None
+        yk, I'm not quite sure... sth to do with the checksum
+
+    csum_offset: int | None = None
+        yk, I'm not quite sure... sth to do with the checksum
+
+    header_stack: Packet | None = None
+        just the headers that you want to encapsulate the payload in.
+        generally, if this is not `None`,
+        you may want to look at setting `assert_data` to `False`, too
+
+    data: list[bytearray] | None = None
+        pre-built packets or payloads (if `header_stack` is not `None`)
+
+    assert_data: bool = True
+        do you want to assert that the received packet's data == sent payload?
+        tends to be disabled for tests using actual packet headers:
+        those headers are not in the payload
+
+    queues: set[int] | None = None
+        pass a set to be informed of which queues, packets have been recevied at
 
     Usage
     -----
@@ -530,6 +555,8 @@ async def simple_packet_firehose(
     Limitations
     -----------
     - `header_stack` cannot use variable values, e.g. IP ranges, port ranges
+        - workaround is to build variable headered packets outside
+          then pass them in using the `data` kwarg
 
     DESIGNED FOR THIS:
     ```python
@@ -542,7 +569,10 @@ async def simple_packet_firehose(
     ```python
     for i in range(fred):
         send()
-
+        # other logic 
+    
+    # other logic
+    
     for i in range(fred):
         recv()
         assert

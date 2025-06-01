@@ -1,6 +1,13 @@
 #!/bin/bash
 
 # curl must be installed for this script to work
+if ! command -v curl >/dev/null 2>&1
+then
+    echo "err: it doesn't look like curl is installed"
+	echo "     curl is required for this script!"
+	echo -e "     please install curl: \e[94m[sudo] apt-get install curl\e[0m"
+    exit 1
+fi
 
 if [ -z $1 ]
 then

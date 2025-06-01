@@ -1,6 +1,15 @@
 # SPDX-License-Identifier: BSD-2-Clause-Views
 # Copyright (c) 2019-2023 The Regents of the University of California
 
+# typing imports
+from __future__ import annotations
+from typing import List, Type
+from cocotbext.pcie.core.pci import PciDevice
+from cocotbext.axi.address_space import Pool
+from cocotbext.pcie.core import RootComplex
+# TODO: which imports do I need?
+
+# module imports
 import datetime
 from collections import deque
 
@@ -370,7 +379,7 @@ class Resource:
     def get_count(self):
         return self.count
 
-    def get_window(self, index):
+    def get_window(self, index: int):
         if index not in self.windows:
             self.windows[index] = self.parent.create_window(index*self.stride, self.stride)
         return self.windows[index]
@@ -448,7 +457,7 @@ class Packet:
 
 
 class Eq:
-    def __init__(self, interface):
+    def __init__(self, interface: Interface):
         self.interface = interface
         self.log = interface.log
         self.driver = interface.driver
@@ -581,7 +590,7 @@ class Eq:
 
 
 class Cq:
-    def __init__(self, interface):
+    def __init__(self, interface: Interface):
         self.interface = interface
         self.log = interface.log
         self.driver = interface.driver
@@ -599,7 +608,7 @@ class Cq:
 
         self.eq = None
 
-        self.src_ring = None
+        self.src_ring: Txq | None = None
         self.handler = None
 
         self.prod_ptr = 0
@@ -679,7 +688,7 @@ class Cq:
 
 
 class Txq:
-    def __init__(self, interface):
+    def __init__(self, interface: Interface):
         self.interface = interface
         self.log = interface.log
         self.driver = interface.driver
@@ -810,7 +819,7 @@ class Txq:
             self.cons_ptr += 1
 
     @staticmethod
-    async def process_tx_cq(cq):
+    async def process_tx_cq(cq: Cq):
         interface = cq.interface
 
         interface.log.info("Process CQ %d for TXQ %d (interface %d)", cq.cqn, cq.src_ring.index, interface.index)
@@ -1220,7 +1229,7 @@ class Port:
 
 
 class Interface:
-    def __init__(self, driver, index, hw_regs):
+    def __init__(self, driver: Driver, index, hw_regs):
         self.driver = driver
         self.log = driver.log
         self.index = index
@@ -1259,10 +1268,10 @@ class Interface:
         self.rx_queue_map_indir_table_size = None
         self.rx_queue_map_indir_table = []
 
-        self.eq = []
+        self.eq: list[Eq] = []
 
-        self.txq = []
-        self.rxq = []
+        self.txq: list[Txq] = []
+        self.rxq: list[Rxq] = []
         self.ports = []
         self.sched_blocks = []
 
@@ -1479,19 +1488,51 @@ class Interface:
 
         await self.ports[0].set_tx_ctrl(0)
 
-    async def start_xmit(self, skb, tx_ring=None, csum_start=None, csum_offset=None):
+    async def start_xmit(
+        self, skb, tx_ring=None, csum_start=None, csum_offset=None
+    ):
+        """Start Transmission
+
+        TODO: idk, what does it do?
+
+        Parameters
+        ----------
+        skb: bytes, bytearray
+            Socket Buffer, basically just the bytes that make up the packet here
+        
+        tx_ring: int | None
+            idk
+        
+        csum_start: int | None
+            idk, where the checksum starts?
+        
+        csum_offset: int | None
+            idk, how long the checksum is?
+
+        Raises
+        ------
+        AssertionError
+            If you so much as sneeze:
+            - if skb is longer than max_tx_mtu
+            - if there's existing tx_info for the ring index you've been assigned...
+        """
+        # first ensures that the iface's port is up and running
         if not self.port_up:
             return
 
+        # turns skb data into bytes (in case it's not already)
         data = bytes(skb)
 
+        # verifying that the data is smaller than the max tx unit
         assert len(data) < self.max_tx_mtu
 
+        # use tx ring you specified, else use default: 0
         if tx_ring is not None:
             ring_index = tx_ring
         else:
             ring_index = 0
 
+        # obtain 'pointer' to the tx queue / ring you wanted
         ring = self.txq[ring_index]
 
         while True:
@@ -1503,13 +1544,17 @@ class Interface:
             ring.clean_event.clear()
             await ring.clean_event.wait()
 
+        # index is wrapped using a mask (more efficient)
         index = ring.prod_ptr & ring.size_mask
 
+        # increment ring attributes with this new packet
         ring.packets += 1
         ring.bytes += len(data)
 
+        # get space in memory region for packet
         pkt = self.driver.alloc_pkt()
 
+        # tx_info would've been cleared by process_tx_cq if working correctly
         assert not ring.tx_info[index]
         ring.tx_info[index] = pkt
 
@@ -1651,19 +1696,19 @@ class Driver:
         self.interrupt_running = False
 
         self.if_count = 1
-        self.interfaces: list[Interface] = []
+        self.interfaces: List[Interface] = []
 
         self.pkt_buf_size = 16384
         self.allocated_packets = []
         self.free_packets = deque()
 
-    async def init_pcie_dev(self, dev):
+    async def init_pcie_dev(self, dev: PciDevice):
         assert not self.initialized
         self.initialized = True
 
         self.dev = dev
 
-        self.pool = self.dev.rc.mem_pool
+        self.pool: Pool = self.dev.rc.mem_pool
 
         await self.dev.enable_device()
         await self.dev.set_master()
@@ -1685,7 +1730,7 @@ class Driver:
         assert not self.initialized
         self.initialized = True
 
-        self.pool = pool
+        self.pool: Pool = pool
 
         self.hw_regs = hw_regs
         self.app_hw_regs = app_hw_regs

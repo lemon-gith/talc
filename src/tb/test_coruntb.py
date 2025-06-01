@@ -866,6 +866,161 @@ async def basic_checksum_test(tb: TB):
     assert Ether(pkt.data).build() == test_pkt.build()
 
 
+async def queue_map_offset_test(tb: TB):
+    for k in range(4):
+        await tb.driver.interfaces[0].set_rx_queue_map_indir_table(0, 0, k)
+
+        pkt_queue = await simple_packet_firehose(
+            tb, tb.driver.interfaces[0], 1, 1024,
+            assert_data=False, queues=set()
+        )
+        if pkt_queue is None:
+            raise ValueError("returned queue was None")
+
+        # pkt_queue should only have one element, if k is that element, good
+        assert k in pkt_queue
+
+    # reset indirection table
+    await tb.driver.interfaces[0].set_rx_queue_map_indir_table(0, 0, 0)
+
+
+async def q_map_rss_mask_test(tb: TB):
+    await tb.driver.interfaces[0].set_rx_queue_map_rss_mask(0, 0x00000003)
+
+    for k in range(4):
+        await tb.driver.interfaces[0].set_rx_queue_map_indir_table(0, k, k)
+
+    tb.loopback_enable = True
+
+    queues = set()
+
+    for k in range(64):
+        payload = bytes([x % 256 for x in range(256)])
+        eth = Ether(src='5A:51:52:53:54:55', dst='DA:D1:D2:D3:D4:D5')
+        ip = IP(src='192.168.1.100', dst='192.168.1.101')
+        udp = UDP(sport=1, dport=k+0)
+        test_pkt = eth / ip / udp / payload
+
+        if tb.driver.interfaces[0].if_feature_tx_csum:
+            test_pkt2 = test_pkt.copy()
+            test_pkt2[UDP].chksum = scapy.utils.checksum(bytes(test_pkt2[UDP]))
+
+            await tb.driver.interfaces[0].start_xmit(test_pkt2.build(), 0, 34, 6)
+        else:
+            await tb.driver.interfaces[0].start_xmit(test_pkt.build(), 0)
+
+    for k in range(64):
+        pkt = await tb.driver.interfaces[0].recv()
+
+        if pkt is None:
+            raise ValueError("Packet is None")
+
+        tb.log.info("Packet: %s", pkt)
+        if tb.driver.interfaces[0].if_feature_rx_csum:
+            assert pkt.rx_checksum == ~scapy.utils.checksum(bytes(pkt.data[14:])) & 0xffff
+
+        queues.add(pkt.queue)
+
+    assert len(queues) == 4
+
+    tb.loopback_enable = False
+
+    # reset rss mask
+    await tb.driver.interfaces[0].set_rx_queue_map_rss_mask(0, 0)
+
+
+async def all_interfaces_test(tb):
+    count = 64
+
+    pkts = [bytearray([(x+k) % 256 for x in range(1514)]) for k in range(count)]
+
+    tb.loopback_enable = True
+
+    for k, p in enumerate(pkts):
+        await tb.driver.interfaces[k % len(tb.driver.interfaces)].start_xmit(p, 0)
+
+    for k in range(count):
+        pkt = await tb.driver.interfaces[k % len(tb.driver.interfaces)].recv()
+
+        if pkt is None:
+            raise ValueError("Packet is None")
+
+        tb.log.info("Packet: %s", pkt)
+
+        assert pkt.data == pkts[k]
+
+        if tb.driver.interfaces[0].if_feature_rx_csum:
+            assert pkt.rx_checksum == ~scapy.utils.checksum(
+                bytes(pkt.data[14:])
+            ) & 0xffff
+
+    tb.loopback_enable = False
+
+
+async def all_scheduler_blocks_test(tb: TB, interface: mqnic.Interface):
+    for block in interface.sched_blocks:
+        await block.schedulers[0].rb.write_dword(mqnic.MQNIC_RB_SCHED_RR_REG_CTRL, 0x00000001)
+        await block.interface.set_rx_queue_map_indir_table(block.index, 0, block.index)
+        for k in range(len(block.interface.txq)):
+            if k % len(block.interface.sched_blocks) == block.index:
+                await block.schedulers[0].hw_regs.write_dword(4*k, 0x00000003)
+            else:
+                await block.schedulers[0].hw_regs.write_dword(4*k, 0x00000000)
+
+        await block.interface.ports[block.index].set_tx_ctrl(mqnic.MQNIC_PORT_TX_CTRL_EN)
+        await block.interface.ports[block.index].set_rx_ctrl(mqnic.MQNIC_PORT_RX_CTRL_EN)
+
+    count = 64
+
+    pkts = [bytearray([(x+k) % 256 for x in range(1514)]) for k in range(count)]
+
+    tb.loopback_enable = True
+
+    queues = set()
+
+    for k, p in enumerate(pkts):
+        await interface.start_xmit(p, k % len(interface.sched_blocks))
+
+    for k in range(count):
+        pkt = await interface.recv()
+
+        if pkt is None:
+            raise ValueError("Packet is None")
+
+        tb.log.info("Packet: %s", pkt)
+        # assert pkt.data == pkts[k]
+        if interface.if_feature_rx_csum:
+            assert pkt.rx_checksum == ~scapy.utils.checksum(bytes(pkt.data[14:])) & 0xffff
+
+        queues.add(pkt.queue)
+
+    assert len(queues) == len(interface.sched_blocks)
+
+    tb.loopback_enable = False
+
+    for block in interface.sched_blocks[1:]:
+        await block.schedulers[0].rb.write_dword(mqnic.MQNIC_RB_SCHED_RR_REG_CTRL, 0x00000000)
+        await interface.set_rx_queue_map_indir_table(block.index, 0, 0)
+
+
+async def lfc_pause_frame_receiver_test(tb: TB, interface: mqnic.Interface):
+    await interface.ports[0].set_lfc_ctrl(
+        mqnic.MQNIC_PORT_LFC_CTRL_TX_LFC_EN 
+        | mqnic.MQNIC_PORT_LFC_CTRL_RX_LFC_EN
+    )
+    
+    await tb.driver.hw_regs.read_dword(0)
+
+    lfc_xoff = Ether(
+        src='DA:D1:D2:D3:D4:D5', dst='01:80:C2:00:00:01', type=0x8808
+    ) / struct.pack('!HH', 0x0001, 2000)
+
+    # send signal to pause LFC
+    await tb.port_mac[0].rx.send(bytes(lfc_xoff))
+
+    await simple_packet_firehose(tb, interface, 16, 1514)
+
+
 @cocotb.test
 async def full_nic_test(dut):
     # Initialise TestBench DUT instance
@@ -896,201 +1051,71 @@ async def full_nic_test(dut):
 
     for interface in tb.driver.interfaces:
         await single_packet_test(tb, interface)
-    # ^this test actually also tests that every interface can do this
-    # similarly to the All Interfaces test, a few tests down
 
-    # -------------------- Another kind of test? --------------------
+    # -------------------- Basic Rx/Tx Checksum Test --------------------
 
     tb.log.info("RX and TX checksum tests")
 
     await basic_checksum_test(tb)
 
-    # -------------------- Another kind of test? --------------------
+    # -------------------- Queue Mapping Offset Test --------------------
 
     tb.log.info("Queue mapping offset test")
 
-    for k in range(4):
-        await tb.driver.interfaces[0].set_rx_queue_map_indir_table(0, 0, k)
+    await queue_map_offset_test(tb)
 
-        pkt_queue = await simple_packet_firehose(
-            tb, tb.driver.interfaces[0], 1, 1024,
-            assert_data=False, queues=set()
-        )
-        if pkt_queue is None:
-            raise ValueError("returned queue was None")
+    # -------------------- Queue mapping RSS mask test --------------------
 
-        # pkt_queue should only have one element, if k is that element, good
-        assert k in pkt_queue
-
-    # reset indirection table
-    await tb.driver.interfaces[0].set_rx_queue_map_indir_table(0, 0, 0)
-
-    # -------------------- Another kind of test? --------------------
-    # no, wait, this is a reconfiguration from ^2,
-
-    # keep the config in here, since I don't think it'd be nice to add to the fn
-    
     if tb.driver.interfaces[0].if_feature_rss:
         tb.log.info("Queue mapping RSS mask test")
 
-        await tb.driver.interfaces[0].set_rx_queue_map_rss_mask(0, 0x00000003)
+        await q_map_rss_mask_test(tb)
 
-        for k in range(4):
-            await tb.driver.interfaces[0].set_rx_queue_map_indir_table(0, k, k)
-
-        tb.loopback_enable = True
-
-        queues = set()
-
-        for k in range(64):
-            payload = bytes([x % 256 for x in range(256)])
-            eth = Ether(src='5A:51:52:53:54:55', dst='DA:D1:D2:D3:D4:D5')
-            ip = IP(src='192.168.1.100', dst='192.168.1.101')
-            udp = UDP(sport=1, dport=k+0)
-            test_pkt = eth / ip / udp / payload
-
-            if tb.driver.interfaces[0].if_feature_tx_csum:
-                test_pkt2 = test_pkt.copy()
-                test_pkt2[UDP].chksum = scapy.utils.checksum(bytes(test_pkt2[UDP]))
-
-                await tb.driver.interfaces[0].start_xmit(test_pkt2.build(), 0, 34, 6)
-            else:
-                await tb.driver.interfaces[0].start_xmit(test_pkt.build(), 0)
-
-        for k in range(64):
-            pkt = await tb.driver.interfaces[0].recv()
-
-            if pkt is None:
-                raise ValueError("Packet is None")
-
-            tb.log.info("Packet: %s", pkt)
-            if tb.driver.interfaces[0].if_feature_rx_csum:
-                assert pkt.rx_checksum == ~scapy.utils.checksum(bytes(pkt.data[14:])) & 0xffff
-
-            queues.add(pkt.queue)
-
-        assert len(queues) == 4
-
-        tb.loopback_enable = False
-
-        # reset rss mask
-        await tb.driver.interfaces[0].set_rx_queue_map_rss_mask(0, 0)
-
-    # -------------------- Another kind of test? --------------------
+    # -------------------- Packet test: Many Small --------------------
 
     tb.log.info("Multiple small packets")
 
     await simple_packet_firehose(tb, tb.driver.interfaces[0], 64, 60)
 
-    # -------------------- Another kind of test? --------------------
+    # -------------------- Packet test: Many Large --------------------
 
     tb.log.info("Multiple large packets")
 
     await simple_packet_firehose(tb, tb.driver.interfaces[0], 64, 1514)
 
-    # -------------------- Similar test to above --------------------
+    # -------------------- Packet test: Many Huge --------------------
 
     tb.log.info("Jumbo frames")
 
     await simple_packet_firehose(tb, tb.driver.interfaces[0], 64, 9014)
 
-    # --------------- Same test as above^2, but on all ifs ---------------
+    # ---------------- Packet test: To all interfaces ----------------
 
     if len(tb.driver.interfaces) > 1:
         tb.log.info("All interfaces")
 
-        count = 64
+        await all_interfaces_test(tb)
 
-        pkts = [bytearray([(x+k) % 256 for x in range(1514)]) for k in range(count)]
-
-        tb.loopback_enable = True
-
-        for k, p in enumerate(pkts):
-            await tb.driver.interfaces[k % len(tb.driver.interfaces)].start_xmit(p, 0)
-
-        for k in range(count):
-            pkt = await tb.driver.interfaces[k % len(tb.driver.interfaces)].recv()
-
-            if pkt is None:
-                raise ValueError("Packet is None")
-
-            tb.log.info("Packet: %s", pkt)
-
-            assert pkt.data == pkts[k]
-
-            if tb.driver.interfaces[0].if_feature_rx_csum:
-                assert pkt.rx_checksum == ~scapy.utils.checksum(
-                    bytes(pkt.data[14:])
-                ) & 0xffff
-
-        tb.loopback_enable = False
-
-    # -------------------- Another kind of test? --------------------
+    # ------------ All Scheduler Blocks Test: Interface 0 ------------
 
     if len(tb.driver.interfaces[0].sched_blocks) > 1:
         tb.log.info("All interface 0 scheduler blocks")
 
-        for block in tb.driver.interfaces[0].sched_blocks:
-            await block.schedulers[0].rb.write_dword(mqnic.MQNIC_RB_SCHED_RR_REG_CTRL, 0x00000001)
-            await block.interface.set_rx_queue_map_indir_table(block.index, 0, block.index)
-            for k in range(len(block.interface.txq)):
-                if k % len(block.interface.sched_blocks) == block.index:
-                    await block.schedulers[0].hw_regs.write_dword(4*k, 0x00000003)
-                else:
-                    await block.schedulers[0].hw_regs.write_dword(4*k, 0x00000000)
+        await all_scheduler_blocks_test(tb, tb.driver.interfaces[0])
 
-            await block.interface.ports[block.index].set_tx_ctrl(mqnic.MQNIC_PORT_TX_CTRL_EN)
-            await block.interface.ports[block.index].set_rx_ctrl(mqnic.MQNIC_PORT_RX_CTRL_EN)
-
-        count = 64
-
-        pkts = [bytearray([(x+k) % 256 for x in range(1514)]) for k in range(count)]
-
-        tb.loopback_enable = True
-
-        queues = set()
-
-        for k, p in enumerate(pkts):
-            await tb.driver.interfaces[0].start_xmit(p, k % len(tb.driver.interfaces[0].sched_blocks))
-
-        for k in range(count):
-            pkt = await tb.driver.interfaces[0].recv()
-
-            if pkt is None:
-                raise ValueError("Packet is None")
-
-            tb.log.info("Packet: %s", pkt)
-            # assert pkt.data == pkts[k]
-            if tb.driver.interfaces[0].if_feature_rx_csum:
-                assert pkt.rx_checksum == ~scapy.utils.checksum(bytes(pkt.data[14:])) & 0xffff
-
-            queues.add(pkt.queue)
-
-        assert len(queues) == len(tb.driver.interfaces[0].sched_blocks)
-
-        tb.loopback_enable = False
-
-        for block in tb.driver.interfaces[0].sched_blocks[1:]:
-            await block.schedulers[0].rb.write_dword(mqnic.MQNIC_RB_SCHED_RR_REG_CTRL, 0x00000000)
-            await tb.driver.interfaces[0].set_rx_queue_map_indir_table(block.index, 0, 0)
-
-    # -------------------- Another kind of test? --------------------
+    # ------------------- Rx under paused LFC Test -------------------
 
     if tb.driver.interfaces[0].if_feature_lfc:
         tb.log.info("Test LFC pause frame RX")
 
-        await tb.driver.interfaces[0].ports[0].set_lfc_ctrl(mqnic.MQNIC_PORT_LFC_CTRL_TX_LFC_EN | mqnic.MQNIC_PORT_LFC_CTRL_RX_LFC_EN)
-        await tb.driver.hw_regs.read_dword(0)
-
-        lfc_xoff = Ether(src='DA:D1:D2:D3:D4:D5', dst='01:80:C2:00:00:01', type=0x8808) / struct.pack('!HH', 0x0001, 2000)
-
-        await tb.port_mac[0].rx.send(bytes(lfc_xoff))
-
-        await simple_packet_firehose(tb, tb.driver.interfaces[0], 16, 1514)
+        await lfc_pause_frame_receiver_test(tb, tb.driver.interfaces[0])
 
     # -------------------- Another kind of test --------------------
+    
     # TODO: do I want this or not?
     # await dma_bench_test(tb)
+
+    # ------------------------- Read Stats -------------------------
 
     tb.log.info("Read statistics counters")
 
@@ -1103,7 +1128,7 @@ async def full_nic_test(dut):
 
     print(lst)
 
-    # -------------------- Another kind of test? --------------------
+    # ---------------- AXI Lite -> App interface Test ----------------
 
     tb.log.info("Test AXI lite interface to application")
 

@@ -801,31 +801,28 @@ async def dma_bench_test(tb: TB):
         await Timer(Decimal(1000), 'ns')
 
 
-async def single_packet_test(tb: TB):
+async def single_packet_test(tb: TB, interface: mqnic.Interface):
     """
     TODO: write this up
     """
-    tb.log.info("Send and receive single packet")
+    data = bytearray([x % 256 for x in range(1024)])
 
-    for interface in tb.driver.interfaces:
-        data = bytearray([x % 256 for x in range(1024)])
+    await interface.start_xmit(data, 0)
 
-        await interface.start_xmit(data, 0)
+    pkt = await tb.port_mac[interface.index*interface.port_count].tx.recv()
+    tb.log.info("Packet: %s", pkt)
 
-        pkt = await tb.port_mac[interface.index*interface.port_count].tx.recv()
-        tb.log.info("Packet: %s", pkt)
+    await tb.port_mac[interface.index*interface.port_count].rx.send(pkt)
 
-        await tb.port_mac[interface.index*interface.port_count].rx.send(pkt)
+    pkt = await interface.recv()
 
-        pkt = await interface.recv()
-
-        tb.log.info("Packet: %s", pkt)
-        if interface.if_feature_rx_csum and pkt is not None:
-            assert (
-                pkt.rx_checksum == ~scapy.utils.checksum(
-                    bytes(pkt.data[14:])
-                ) & 0xffff
-            )
+    tb.log.info("Packet: %s", pkt)
+    if interface.if_feature_rx_csum and pkt is not None:
+        assert (
+            pkt.rx_checksum == ~scapy.utils.checksum(
+                bytes(pkt.data[14:])
+            ) & 0xffff
+        )
 
 
 async def basic_checksum_test(tb: TB):
@@ -896,7 +893,9 @@ async def full_nic_test(dut):
     # -------------------- All iface, single packet test --------------------
 
     tb.log.info("Send and receive single packet")
-    await single_packet_test(tb)
+
+    for interface in tb.driver.interfaces:
+        await single_packet_test(tb, interface)
     # ^this test actually also tests that every interface can do this
     # similarly to the All Interfaces test, a few tests down
 

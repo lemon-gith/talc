@@ -29,7 +29,7 @@ COPY ./nics/corundum /corundum
 # in order to be able to put it onto one of the supported FPGA boards
 
 # add custom scripts to directory in PATH
-COPY ./scripts /usr/local/bin
+COPY ./scripts/global /usr/local/bin
 RUN chmod +x /usr/local/bin/*
 
 # to update/add scripts, you can use the following command:

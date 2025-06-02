@@ -27,17 +27,24 @@ function print_help {
 	local b="\e[94m"  # blue
 	local bb="\e[1;94m"  # bold, blue
 	local bfgb="\e[34;42m"  # blue foreground, green background (like ls dir/)
+	local g="\e[32m"  # green
+	local y="\e[33m"  # yellow
 	echo -e "Usage: $bb$base_name$c$b COMMAND [ COMMAND | OPTIONS ] [...]$c \n"
 	echo -e "$bb$base_name$c$b help$c"
-	echo -e "    This is what you've just typed to get this help message :)\n"
+	echo -e "     This is what you've just typed to get this help message :)\n"
 	echo -e "$bb$base_name$c$b logs COMMAND [ COMMAND ] [ ARGS ]$c"
-	echo -e "    Operations acting on the log/output dir: $bfgb$out_dir$c"
+	echo -e "     Operations acting on the log/output dir: $bfgb$out_dir$c"
 	echo -e "  $b logs clean$c"
-	echo -e "    Cleans all files from output directory"
+	echo -e "     Cleans all files from output directory"
 	echo -e "  $b logs [ dir | path | where | loc ]$c"
-	echo -e "    Returns just the location of output directory"
+	echo -e "     Returns just the location of output directory"
 	echo -e "  $b logs COMMAND [ ARGS ]$c"
-	echo -e "    Executes COMMAND with ARGS in the output directory\n"
+	echo -e "     Executes COMMAND with ARGS in the output directory, e.g."
+	echo -e "    $g logs ls$c"
+	echo -e "       to list files in output directory"
+	echo -e "    $g logs cat FILE$c"
+	echo -e "       to 'cat' contents of FILE, in output directory, to stdout"
+	echo -e "    $y N.B. Globbing will not work correctly in these commands$c\n"
 }
 
 # just extracted the utility function used to clean directories

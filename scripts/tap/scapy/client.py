@@ -21,4 +21,4 @@ packet = eth / ip / udp / payload
 while True:
     # Send at Layer 2 (Ethernet layer)
     sendp(packet, iface="tap0")
-    time.sleep(1)
+    time.sleep(2)

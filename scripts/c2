@@ -32,6 +32,39 @@ function print_help {
 	echo -e "    Cleans all files from output directory ($bfgb$out_dir$c)\n"
 }
 
+# just extracted the utility function used to clean directories
+function clean_dir {
+	target_dir=${1:?"internal-err: didn't pass arg to clean_dir, you muppet"}
+
+	init_file_count=$(ls $target_dir | wc -l)
+	if (( init_file_count == 0 ))
+	then
+		echo "already clean :D"
+		exit 0
+	fi
+
+	echo "cleaning $target_dir..."
+	rm $target_dir/*
+
+	echo "checking for stragglers..."
+	file_count=$(ls $target_dir | wc -l)
+
+	if (( file_count > 0 ))
+	then
+		if (( file_count < init_file_count ))
+		then
+			echo "err: hmmmmmM, stragglers - some files were not removed"
+		else
+			echo "err: clean failed!"
+		fi
+		echo "     please navigate to $target_dir/ to check on the problem"
+		exit 1
+	fi
+	echo "clean was successful!"
+	exit 0
+}
+
+
 outfile_base=$out_dir/$(date +"%Y%m%d_%H%M%S")
 outfile=$outfile_base-out.txt
 logfile=$outfile_base-log.log

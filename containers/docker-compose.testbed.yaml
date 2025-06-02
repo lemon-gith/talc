@@ -1,0 +1,50 @@
+services:
+  devcontainer:
+    build:
+      dockerfile: ./containers/coruntb.Dockerfile
+      context: .
+    ports:
+      - "8008:80"
+    environment:
+    # add environment variables that would be useful
+      - TEST_DEVS=${TEST_DEVS:-3}
+      # will exit with error if this is unset or empty, what to use for?
+      - REQUIRED_VAR=${REQUIRED_VAR:?}
+    volumes:
+      - type: bind
+        source: "./src/tb/"
+        target: "/corundum/fpga/app/template/tb/coruntb"
+      - type: bind
+        source: "./containers/patches/corundum/tb/.vscode/"
+        target: "/corundum/.vscode/"
+      # TODO: add other dev specific mounts
+    networks:
+      - ssfnet
+    healthcheck:
+    # just some kind of basic status check
+      test: c2 status
+      interval: 5s
+      timeout: 10s
+      start_period: 10s
+
+  testcontainer:
+    build:
+      dockerfile: ./containers/coruntb.Dockerfile
+      context: .
+    networks:
+      - ssfnet
+    depends_on:
+      devcontainer:
+        condition: service_healthy
+    deploy:
+      mode: replicated
+      replicas: ${TEST_DEVS:-3}
+      endpoint_mode: vip
+    volumes:
+      -
+
+networks:
+  ssfnet:
+    name: ssfnet
+
+# docker compose -f containers/docker-compose.testbed.yaml up

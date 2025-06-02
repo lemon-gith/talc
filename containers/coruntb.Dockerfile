@@ -1,4 +1,24 @@
+# FROM ubuntu:24.04 as build-image
+
+# Copy function code
+# RUN mkdir -p /corundum
+
+# WORKDIR /corundum
+
+# build dependencies
+# RUN apt-get install -y g++
+# install rust? :DDDDDDDD
+# RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+# RUN rustup update
+
+# TODO: give this a build stage?
+
+
+# Grab a fresh copy of the image to reduce the final size
 FROM ubuntu:24.04
+
+# Copy in the built dependencies
+# COPY --from=build-image /corundum/idk /corundum/idk
 
 RUN apt-get update && apt-get upgrade -y
 

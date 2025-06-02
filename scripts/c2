@@ -16,20 +16,28 @@ then
 	exit 2
 fi
 
+# define temporary output directory for logs and things
 out_dir=/tmp/c2-logs
 mkdir -p $out_dir
 
+# help output
 function print_help {
 	local base_name=$(basename $0)
 	local c="\e[0m"  # clear colour
 	local b="\e[94m"  # blue
 	local bb="\e[1;94m"  # bold, blue
 	local bfgb="\e[34;42m"  # blue foreground, green background (like ls dir/)
-	echo -e "Usage: $bb$base_name$c$b COMMAND$c \n"
+	echo -e "Usage: $bb$base_name$c$b COMMAND [ COMMAND | OPTIONS ] [...]$c \n"
 	echo -e "$bb$base_name$c$b help$c"
 	echo -e "    This is what you've just typed to get this help message :)\n"
-	echo -e "$bb$base_name$c$b clean$c"
-	echo -e "    Cleans all files from output directory ($bfgb$out_dir$c)\n"
+	echo -e "$bb$base_name$c$b logs COMMAND [ COMMAND ] [ ARGS ]$c"
+	echo -e "    Operations acting on the log/output dir: $bfgb$out_dir$c"
+	echo -e "  $b logs clean$c"
+	echo -e "    Cleans all files from output directory"
+	echo -e "  $b logs [ dir | path | where | loc ]$c"
+	echo -e "    Returns just the location of output directory"
+	echo -e "  $b logs COMMAND [ ARGS ]$c"
+	echo -e "    Executes COMMAND with ARGS in the output directory\n"
 }
 
 # just extracted the utility function used to clean directories
@@ -69,31 +77,30 @@ outfile_base=$out_dir/$(date +"%Y%m%d_%H%M%S")
 outfile=$outfile_base-out.txt
 logfile=$outfile_base-log.log
 
+
 case $1 in
-	clean)
-		outfile_count=$(ls $out_dir | wc -l)
-		if (( outfile_count == 0 ))
+	logs)
+		if [ -z $2 ]
 		then
-			echo "already clean :D"
-			exit 0
+			echo "err: ok... what do you want me to do with the logs?"
+			echo "     please enter a command after 'logs'"
+			exit 2
 		fi
 
-		echo "cleaning output directory..."
-		rm $out_dir/*
+		case $2 in
+			clean)
+				clean_dir $out_dir
+			;;
 
-		echo "checking for stragglers..."
-		outfile_count=$(ls $out_dir | wc -l)
+			dir | directory | path | where | loc | location)
+				echo $out_dir
+				;;
 
-		echo "outfile count = $outfile_count"
-
-		if (( outfile_count > 0 ))
-		then
-			echo "err: clean failed!"
-			echo "     please navigate to $out_dir/ to check on the problem"
-			exit 1
-		fi
-		echo "clean was successful!"
-		exit 0
+			*)
+				cd $out_dir
+				exec "${@:2}"
+			;;
+		esac
 		;;
 
 	# provide these options, but still prefer "help"

@@ -10,11 +10,14 @@
 #include <sys/stat.h>
 #include <netinet/ip.h>
 #include <netinet/ether.h>
+#include <stdlib.h>
+
 
 class TapInterface {
 public:
     TapInterface(const std::string& dev_name = "tap0") : fd_(-1), if_name_(dev_name) {
         createTap();
+        tapUp();
     }
 
     ~TapInterface() {
@@ -69,6 +72,10 @@ private:
         if_name_ = ifr.ifr_name;
         std::cout << "Created TAP device: " << if_name_ << std::endl;
     }
+
+    void tapUp() {
+        system(("../py/scripts/tap-config.sh " + if_name_).c_str());
+    }
 };
 
 void printIpAddress(uint32_t ip) {
@@ -77,10 +84,10 @@ void printIpAddress(uint32_t ip) {
     bytes[1] = (ip >> 8) & 0xFF;
     bytes[2] = (ip >> 16) & 0xFF;
     bytes[3] = (ip >> 24) & 0xFF;
-    std::cout << (int)bytes[0] << "."
-              << (int)bytes[1] << "."
+    std::cout << (int)bytes[3] << "."
               << (int)bytes[2] << "."
-              << (int)bytes[3];
+              << (int)bytes[1] << "."
+              << (int)bytes[0];
 }
 
 int main() {
@@ -95,13 +102,16 @@ int main() {
             break;
         }
 
-        std::cout << "Read " << nread << " bytes from " << tap.getInterfaceName() << std::endl;
+        std::cout << "Read " << nread << " bytes from "
+            << tap.getInterfaceName() << std::endl;
 
-	if (nread >= sizeof(struct ether_header)) {
+	    if (nread >= sizeof(struct ether_header)) {
             struct ether_header* eth = (struct ether_header*)buffer;
             // Check if the packet is an IP packet
             if (ntohs(eth->ether_type) == ETHERTYPE_IP) {
-                struct iphdr* ip = (struct iphdr*)(buffer + sizeof(struct ether_header));
+                struct iphdr* ip = (struct iphdr*)(
+                    buffer + sizeof(struct ether_header)
+                );
 
                 std::cout << "IP Header:" << std::endl;
                 std::cout << "  Src IP: ";

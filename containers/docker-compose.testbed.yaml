@@ -20,6 +20,9 @@ services:
       # TODO: add other dev specific mounts
     networks:
       - ssfnet
+    securityContext:
+      capabilities:
+        add: ["NET_ADMIN", "NET_RAW"]
     healthcheck:
     # just some kind of basic status check
       test: c2 status
@@ -31,8 +34,18 @@ services:
     build:
       dockerfile: ./containers/coruntb.Dockerfile
       context: .
+    volumes:
+      - type: bind
+        source: "./src/tb/"
+        target: "/corundum/fpga/app/template/tb/coruntb"
+      - type: bind
+        source: "./containers/patches/corundum/tb/.vscode/"
+        target: "/corundum/.vscode/"
     networks:
       - ssfnet
+    securityContext:
+      capabilities:
+        add: ["NET_ADMIN", "NET_RAW"]
     depends_on:
       devcontainer:
         condition: service_healthy
@@ -40,8 +53,6 @@ services:
       mode: replicated
       replicas: ${TEST_DEVS:-3}
       endpoint_mode: vip
-    volumes:
-      -
 
 networks:
   ssfnet:

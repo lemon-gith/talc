@@ -1,7 +1,14 @@
-#!/usr/bin/python3
+from scapy.layers.l2 import Ether
+from scapy.layers.inet import IP, UDP
 
-from scapy.all import Ether, IP, UDP, sendp
 import time
+
+from netlib.iproute import IPRoute
+from netlib.tap import Tap
+
+ipr = IPRoute()
+
+tom = Tap(is_client=True)
 
 # Craft Ethernet layer
 eth = Ether(dst="ff:ff:ff:ff:ff:ff")  # Broadcast MAC
@@ -18,7 +25,9 @@ payload = b"Hello from Scapy!"
 # Stack layers together
 packet = eth / ip / udp / payload
 
-while True:
+# while True:
+if __name__ == "__main__":
     # Send at Layer 2 (Ethernet layer)
-    sendp(packet, iface="tap0")
+    tom.send(packet)
+
     time.sleep(2)

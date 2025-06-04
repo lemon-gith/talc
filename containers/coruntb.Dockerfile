@@ -8,23 +8,33 @@ RUN apt-get update && apt-get upgrade -y
 # install useful networking tools
 RUN apt-get install -y iproute2 curl iputils-ping net-tools dnsutils tcpdump
 
-# install SimBricks corundum dependencies
+# install Corundum dependencies
 RUN apt-get install -y python3-dev python-is-python3 python3-pip gtkwave \
   git autoconf apt-utils bc bison flex build-essential cmake doxygen g++
 
 RUN apt-get install -y verilator python3-venv iverilog
 
-# make the corundum directory and work there
-RUN mkdir -p /corundum
-WORKDIR /corundum
+# add custom scripts to directory in PATH
+COPY ./scripts/global /usr/local/bin
+RUN chmod +x /usr/local/bin/*
+
+# to update/add scripts, you can use the following command:
+# docker cp ./scripts/<filename> cortb:/usr/local/bin/
 
 # make directory for TAP stuff
 RUN mkdir -p /tapaz
 
+# make the corundum directory and work there
+RUN mkdir -p /corundum
+WORKDIR /corundum
+
+# make sure the requirements are ported over
+COPY ./containers/configs/coruntb/requirements.txt /corundum/requirements.txt
+
 # set up cocotb tools
 RUN python3 -m venv venv
-RUN . venv/bin/activate && pip install --upgrade pip
-RUN . venv/bin/activate && pip install cocotb cocotbext-axi cocotbext-eth cocotbext-pcie scapy cocotb_test pytest
+RUN . activenv && pip install --upgrade pip
+RUN . activenv && pip install -r /corundum/requirements.txt
 
 # copy over corundum files
 COPY ./nics/corundum /corundum
@@ -33,13 +43,6 @@ COPY ./nics/corundum /corundum
 # Since I'm maintaining the overall file structure,
 # can just give short instruction on how to port to full repo
 # in order to be able to put it onto one of the supported FPGA boards
-
-# add custom scripts to directory in PATH
-COPY ./scripts/global /usr/local/bin
-RUN chmod +x /usr/local/bin/*
-
-# to update/add scripts, you can use the following command:
-# docker cp ./scripts/<filename> cortb:/usr/local/bin/
 
 # give python executable networking capabilities (using our global script)
 RUN privesc set /usr/bin/python3.12

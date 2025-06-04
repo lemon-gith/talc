@@ -19,6 +19,64 @@ from corunlib import mqnic
 from tests.test import tell_me_the_truth, tell_me_lies  # noqa: F401 <- for ruff
 
 
+async def nic_process(
+    tb: TB, packet: Packet, iface_num: int = 0, tx_ring: int = 0,
+    csum_start: int | None = None, csum_offset: int | None = None
+):
+    """Send a packet via the driver, through the NIC and pick it up from the MAC
+
+    Basically having the NIC process the packet
+
+    Parameters
+    ----------
+    tb: TB
+        the testbench instance being used for the testing
+
+    packet: scapy.packet.Packet
+        the packet you want the DUT to send
+
+    iface_num: int = 0
+        which interface number would you like to send the packet from?
+
+    tx_ring: int = 0
+        which transmission ring would you like to use?
+
+    csum_start: int | None = None
+        yk, I'm not quite sure... sth to do with the checksum
+
+    csum_offset: int | None = None
+        yk, I'm not quite sure... sth to do with the checksum
+
+    Usage
+    -----
+    ```python
+    await send_through_nic(tb, test_pkt)
+    ```
+
+    or
+
+    ```python
+    eth = Ether(src='5A:51:52:53:54:55', dst='DA:D1:D2:D3:D4:D5')
+    ip = IP(src='192.168.1.100', dst='192.168.1.101')
+    udp = UDP(sport=1, dport=42)
+    payload = b"hiya"
+    packet = eth / ip / udp / payload
+
+    for iface_num in range(len(tb.driver.interfaces)):
+        await simple_packet_firehose(tb, packet, iface_num)
+    ```
+    """
+    iface = tb.driver.interfaces[iface_num]
+
+    # transmit the packet using the driver
+    await iface.start_xmit(packet.build(), tx_ring, csum_start, csum_offset)
+
+    # catch the packet at the MAC port
+    pkt = await tb.port_mac[iface_num].tx.recv()
+
+    return pkt
+
+
 @cocotb.test
 async def run_testbed(dut):
     # -------------------- DUT initialisation, copied from  --------------------

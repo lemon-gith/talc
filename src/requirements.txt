@@ -1,1 +1,1 @@
-containers/configs/coruntb/requirements.txt
+../containers/configs/requirements.txt

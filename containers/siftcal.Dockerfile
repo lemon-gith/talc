@@ -44,8 +44,9 @@ RUN rm ./activenv.corundum && mv ./activenv.siftcal ./activenv
 
 # make directory for TAP stuff
 RUN mkdir -p /siftcal/pyutils/netlib
-# add the pyutils directory to PYTHONPATH, so it can be easily imported
-RUN echo -e "\nPYTHONPATH=\${PYTHONPATH:+\${PYTHONPATH}:}/siftcal/pyutils/" >> \
+# add the pyutils directory to PYTHONPATH, so its libraries are recognised
+RUN echo -e \
+  "\nexport PYTHONPATH=\${PYTHONPATH:+\${PYTHONPATH}:}/siftcal/pyutils/" >> \
   ~/.bashrc
 
 # make the corundum directory and work there

@@ -99,6 +99,9 @@ async def simple_packet_firehose(
         and how large do you want those packets?
         default value of 0 produces empty packets
 
+    tx_ring: int = 0
+        which transmission ring would you like to use?
+
     enable_loopback: bool = True
         should automatic MAC loopback be enabled?
         default value of True will keep this enabled,

@@ -41,6 +41,10 @@ RUN chmod +x /usr/local/bin/*
 # to update/add scripts, you can use the following command:
 # docker cp ./scripts/<filename> cortb:/usr/local/bin/
 
+# give python executable networking capabilities (using our global script)
+RUN privesc set /usr/bin/python3.12
+
+# So that it's always running, and we can just exec in
 ENTRYPOINT [ "sleep", "infinity" ]
 
 # to get our nice mounted directory, which should make working on this easier,

@@ -13,7 +13,9 @@ ipr = IPRoute()
 
 class UsageError(BaseException): ...
 
-
+# TODO: if there's time, separate this class into 2 sub-classes:
+# server and listener, since it's just cleaner and safer
+# but for now, this is quicker, clean enough, and I'm in a rush
 class Tap:
     """A wrapper around a linux tap interface"""
     def __init__(

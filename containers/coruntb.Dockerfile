@@ -1,5 +1,8 @@
 FROM ubuntu:24.04
 
+# ensure that all following commands are run with bash, not bourne shell
+SHELL ["/bin/bash", "-c"]
+
 RUN apt-get update && apt-get upgrade -y
 
 # install useful networking tools

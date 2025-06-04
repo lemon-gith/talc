@@ -12,15 +12,25 @@
       https://stackoverflow.com/q/25185405 <- if you have a GPU
       if you can't, then you should comment this line out:
     */
-    "--gpus=all"
+    "--gpus=all",
+    // it needs networking capabilities for the TAP stuff
+    "--cap-add=NET_RAW",
+    "--cap-add=NET_ADMIN",
+    // the tun device needs to be carried over into the containers
+    "--device=/dev/net/tun:/dev/net/tun"
   ],
   "workspaceMount": "source=${localWorkspaceFolder}/src/tb/,target=/corundum/fpga/app/template/tb/coruntb,type=bind",
   "workspaceFolder": "/corundum",
   "mounts": [
     {  // add vscode config files to container, for devcontainer
+      "type": "bind",
       "source": "${localWorkspaceFolder}/containers/patches/corundum/tb/.vscode/",
-      "target": "/corundum/.vscode/",
-      "type": "bind"
+      "target": "/corundum/.vscode/"
+    },
+    {  // add vscode config files to container, for devcontainer
+      "type": "bind",
+      "source": "${localWorkspaceFolder}/src/tap/py/",
+      "target": "/tapaz/"
     }
   ],
 

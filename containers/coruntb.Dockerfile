@@ -42,7 +42,7 @@ ENTRYPOINT [ "sleep", "infinity" ]
 
 # run from repo root:
 # docker build -t coruntb -f containers/coruntb.Dockerfile .
-# docker run -d --name cortb --gpus=all --mount type=bind,src=./src/coruntb/tb,dst=/corundum/fpga/app/template/tb/coruntb coruntb
+# docker run -d --name cortb --gpus=all --cap-add=NET_RAW --cap-add=NET_ADMIN --device /dev/net/tun:/dev/net/tun --mount type=bind,src=./src/coruntb/tb,dst=/corundum/fpga/app/template/tb/coruntb coruntb
 # docker exec -it cortb bash
 
 # source /corundum/venv/bin/activate

@@ -1,7 +1,7 @@
 {
-  "name": "siftcal",
+  "name": "coruntb",
   "build": {
-    "dockerfile": "../containers/siftcal.Dockerfile",
+    "dockerfile": "../containers/coruntb.Dockerfile",
     "context": ".."
   },
   "runArgs": [
@@ -19,18 +19,18 @@
     // the tun device needs to be carried over into the containers
     "--device=/dev/net/tun:/dev/net/tun"
   ],
-  "workspaceMount": "source=${localWorkspaceFolder}/src/tb/,target=/siftcal/tb/testbed/,type=bind",
-  "workspaceFolder": "/siftcal",
+  "workspaceMount": "source=${localWorkspaceFolder}/src/tb/,target=/corundum/fpga/app/template/tb/coruntb,type=bind",
+  "workspaceFolder": "/corundum",
   "mounts": [
     {  // add vscode config files to container, for devcontainer
       "type": "bind",
       "source": "${localWorkspaceFolder}/containers/configs/coruntb/.vscode/",
-      "target": "/siftcal/.vscode/"
+      "target": "/corundum/.vscode/"
     },
     {  // add vscode config files to container, for devcontainer
       "type": "bind",
       "source": "${localWorkspaceFolder}/src/tap/py/",
-      "target": "/siftcal/pyutils/tapaz/"
+      "target": "/tapaz/"
     }
   ],
 

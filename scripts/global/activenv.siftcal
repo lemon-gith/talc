@@ -1,0 +1,16 @@
+#!/bin/bash
+
+# little script to help me activate the venv from anywhere in the container
+
+# note: this script must be `source`d to work
+re="^.*(ba)?sh$"
+if ! [[ $0 =~ $re ]]
+then
+    echo "error: this is running in a subshell ($0), please source it instead,"
+    echo "       e.g. '. activenv' or 'source activenv'"
+    exit 2
+fi
+
+venv_path=${1:-/siftcal/venv}
+
+source $venv_path/bin/activate

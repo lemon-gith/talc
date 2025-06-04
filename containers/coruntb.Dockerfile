@@ -15,8 +15,10 @@ RUN apt-get install -y python3-dev python-is-python3 python3-pip gtkwave \
 RUN apt-get install -y verilator python3-venv iverilog
 
 # add custom scripts to directory in PATH
-COPY ./scripts/global /usr/local/bin
-RUN chmod +x /usr/local/bin/*
+WORKDIR /usr/local/bin
+COPY ./scripts/global .
+RUN chmod +x ./*
+RUN rm ./activenv.siftcal && mv ./activenv.corundum ./activenv
 
 # to update/add scripts, you can use the following command:
 # docker cp ./scripts/<filename> cortb:/usr/local/bin/
@@ -29,7 +31,7 @@ RUN mkdir -p /corundum
 WORKDIR /corundum
 
 # make sure the requirements are ported over
-COPY ./containers/configs/coruntb/requirements.txt /corundum/requirements.txt
+COPY ./containers/configs/requirements.txt /corundum/
 
 # set up cocotb tools
 RUN python3 -m venv venv

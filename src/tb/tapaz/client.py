@@ -1,3 +1,5 @@
+"""A singleton library containing a TAP Client class"""
+
 from scapy.layers.l2 import Ether
 from scapy.layers.inet import IP, UDP
 from scapy.packet import Packet
@@ -9,6 +11,9 @@ from netlib.tap import Tap
 
 
 class TAPClient:
+    """
+    Currently just a simple class providing an easy send fn for a TAP iface
+    """
     ipr = IPRoute()
 
     def __init__(self, devname: str = "tap0"):

@@ -6,7 +6,11 @@
 
 program=${2:-"/usr/bin/python3.12"}
 progname=$(echo "${program//// }" | tr ' ' '_')
-ogcap_file="ogcap-$progname.tmp"
+
+# make prior-capability storage directory, out of the way of the user
+ogcap_dir="/tmp/ogcaps/"
+mkdir -p $ogcap_dir
+ogcap_file="$ogcap_dir/$progname.tmp"
 
 case $1 in
     get)

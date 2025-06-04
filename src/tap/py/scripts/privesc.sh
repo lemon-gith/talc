@@ -13,10 +13,10 @@ case $1 in
     set)
         getcap $program | awk '{print $2}' | tr -d '[:space:]' > $ogcap_file
 
-        sudo setcap cap_net_raw,cap_net_admin=eip $program
+        setcap cap_net_raw,cap_net_admin=eip $program
         ;;
     unset | rm | del)
-        sudo setcap -r $program
+        setcap -r $program
 
         if [ -f $ogcap_file ]
         then
@@ -25,7 +25,7 @@ case $1 in
             then
                 echo "had no capabilities set before"
             else
-                sudo setcap $caps $program
+                setcap $caps $program
             fi
         fi
         ;;

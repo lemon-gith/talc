@@ -1,9 +1,8 @@
-from scapy.layers.l2 import Ether
-from scapy.layers.inet import IP, UDP
+# from scapy.layers.l2 import Ether
+# from scapy.layers.inet import UDP
+from scapy.layers.inet import IP
 
 from scapy.packet import ls
-
-from pathlib import Path
 
 from netlib.iproute import IPRoute
 from netlib.tap import Tap
@@ -12,7 +11,7 @@ from netlib.tap import Tap
 ipr = IPRoute()
 
 # instantiate TAP device
-faucet = Tap(no_su=True, config_script=Path("./tap-config.sh"))
+faucet = Tap()
 
 
 print("listening...")

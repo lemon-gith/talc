@@ -29,7 +29,7 @@ while True:
 
     # if not from our little tap subnet, and not coming to us
     if not (
-        ip_src.startswith("10.0.0.") and ip_dst.fields["dst"] == "10.0.0.1"
+        ip_src.startswith("10.0.0.") and ip_dst == "10.0.0.1"
     ):
         continue
 

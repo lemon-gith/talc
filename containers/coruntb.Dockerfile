@@ -15,6 +15,9 @@ RUN apt-get install -y verilator python3-venv iverilog
 RUN mkdir -p /corundum
 WORKDIR /corundum
 
+# make directory for TAP stuff
+RUN mkdir -p /tapaz
+
 # set up cocotb tools
 RUN python3 -m venv venv
 RUN . venv/bin/activate && pip install --upgrade pip

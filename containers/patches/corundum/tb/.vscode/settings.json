@@ -4,5 +4,7 @@
     "reportUnusedImport": "none",
     // Downgrade to a warning because cocotbext is full of them
     "reportOptionalMemberAccess": "warning",
-  }
+  },
+  "python.defaultInterpreterPath": "/corundum/venv/bin/python3.12",
+  "python.terminal.activateEnvironment": true
 }

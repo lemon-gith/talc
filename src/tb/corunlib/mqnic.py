@@ -1492,19 +1492,17 @@ class Interface:
     ):
         """Start Transmission
 
-        TODO: idk, what does it do?
-
         Parameters
         ----------
         skb: bytes, bytearray
             Socket Buffer, basically just the bytes that make up the packet here
-        
+
         tx_ring: int | None
             idk
-        
+
         csum_start: int | None
             idk, where the checksum starts?
-        
+
         csum_offset: int | None
             idk, how long the checksum is?
 

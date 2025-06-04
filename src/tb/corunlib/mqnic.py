@@ -3,10 +3,9 @@
 
 # typing imports
 from __future__ import annotations
-from typing import List, Type
+from typing import List
 from cocotbext.pcie.core.pci import PciDevice
 from cocotbext.axi.address_space import Pool
-from cocotbext.pcie.core import RootComplex
 # TODO: which imports do I need?
 
 # module imports

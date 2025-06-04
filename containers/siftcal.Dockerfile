@@ -43,9 +43,9 @@ RUN rm ./activenv.corundum && mv ./activenv.siftcal ./activenv
 # docker cp ./scripts/<filename> cortb:/usr/local/bin/
 
 # make directory for TAP stuff
-RUN mkdir -p /siftcal/pyutils/tapaz
+RUN mkdir -p /siftcal/pyutils/netlib
 # add the pyutils directory to PYTHONPATH, so it can be easily imported
-RUN echo -e "\nPYTHONPATH=\${PYTHONPATH:+\${PYTHONPATH}:}/siftcal/pyutils" >> \
+RUN echo -e "\nPYTHONPATH=\${PYTHONPATH:+\${PYTHONPATH}:}/siftcal/pyutils/" >> \
   ~/.bashrc
 
 # make the corundum directory and work there

@@ -7,13 +7,13 @@ TOPLEVEL_LANG = verilog
 
 SIM ?= icarus
 WAVES ?= 0
+MODULE ?= run_testbed
 
 COCOTB_HDL_TIMEUNIT = 1ns
 COCOTB_HDL_TIMEPRECISION = 1ps
 
 DUT      = mqnic_core_pcie_us
 TOPLEVEL = $(DUT)
-MODULE   = test_coruntb
 VERILOG_SOURCES += ../../rtl/common/$(DUT).v
 VERILOG_SOURCES += ../../rtl/common/mqnic_core_pcie.v
 VERILOG_SOURCES += ../../rtl/common/mqnic_core.v

@@ -1,6 +1,9 @@
 #!/bin/bash
 
 
+# Disclaimer: this is not an actual privilege escalation script
+# it just assigns networking capabilities (which is also powerful, but...)
+
 program=${2:-"/usr/bin/python3.12"}
 progname=$(echo "${program//// }" | tr ' ' '_')
 ogcap_file="ogcap-$progname.tmp"

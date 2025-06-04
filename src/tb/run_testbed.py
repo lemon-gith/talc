@@ -1,14 +1,20 @@
 # typing imports
 from scapy.packet import Packet
+from cocotbext.eth.eth_mac import EthMacFrame
 
 # module imports
 import os
 import struct
 import sys
 
+import time
+
 import scapy.utils
 from scapy.layers.l2 import Ether
 from scapy.layers.inet import IP, UDP
+
+# from pyutils.netlib.tap import Tap
+from tapaz.client import TAPClient
 
 import cocotb
 from corunlib.testbench import TB
@@ -79,7 +85,7 @@ async def nic_process(
 
 @cocotb.test
 async def run_testbed(dut):
-    # -------------------- DUT initialisation, copied from  --------------------
+    # ---------------- DUT initialisation, copied over ----------------
     # Initialise TestBench DUT instance
     tb = TB(dut, msix_count=2**len(dut.core_pcie_inst.irq_index))
 
@@ -108,4 +114,28 @@ async def run_testbed(dut):
 
     # -------------------- Start interactive testbed --------------------
 
-    tb.log.info("Send and receive single packet")
+    tabby = TAPClient()
+
+    tb.log.info("Send a single packet: client.py test")
+
+    payload = bytes(
+        b"Greetings, weary traveller. Wait no, it is I who has travelled..."
+    )
+    udp = UDP(sport=12345, dport=8200)
+    ip = IP(src="10.0.0.2", dst="10.0.0.1")
+    eth = Ether(src="5A:51:52:53:54:55", dst="ff:ff:ff:ff:ff:ff")
+    test_pkt = eth / ip / udp / payload
+
+    pkt = await nic_process(tb, test_pkt)
+
+    print(f"ETH PACKET INFORMATION: {pkt.data}")
+
+    tabby.send(pkt)
+    time.sleep(5)
+
+    # try to see if you can get the checksum working for a basic send
+    # if tb.driver.interfaces[0].if_feature_tx_csum:
+        # test_pkt2 = test_pkt.copy()
+        # test_pkt2[UDP].chksum = scapy.utils.checksum(bytes(test_pkt2[UDP]))
+
+        # await tb.driver.interfaces[0].start_xmit(test_pkt2.build(), 0, 34, 6)

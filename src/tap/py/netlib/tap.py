@@ -49,7 +49,8 @@ class Tap:
             (or however long your `timestamp_timeout` is set to)
 
             3. You must provide a shell file that will setup and configure
-            the tap interface once it's created here, , e.g.
+            the tap interface once it's created here; if you do not have one,
+            one will be provided for you:
             ```
         #!/bin/bash
 
@@ -79,9 +80,7 @@ class Tap:
         # set device up and give it an ip address
         if no_su:  # either without superuser, but lots of manual work
             if not config_script.exists():
-                raise RuntimeError(
-                    "You didn't pass a valid path to a config script"
-                )
+                config_script = Path(__file__).parent / "scripts/tap-config.sh"
 
             out = subprocess.run(
                 config_script.resolve(),

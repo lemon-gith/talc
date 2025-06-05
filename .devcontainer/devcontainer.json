@@ -29,8 +29,8 @@
     },
     {  // add vscode config files to container, for devcontainer
       "type": "bind",
-      "source": "${localWorkspaceFolder}/src/tap/py/netlib",
-      "target": "/siftcal/pyutils/netlib/"
+      "source": "${localWorkspaceFolder}/src/utils/py",
+      "target": "/siftcal/pyutils/"
     }
   ],
 

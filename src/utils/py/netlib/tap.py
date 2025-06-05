@@ -111,6 +111,7 @@ class Tap:
         time.sleep(1)
 
     def listen(self):
+        """listens to the TAP, until it receives a packet"""
         if self.is_client:
             raise UsageError("err (tap): a client instance may not listen")
 

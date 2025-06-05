@@ -1,10 +1,8 @@
-"""A singleton library containing a TAP Client class"""
+"""A singleton module containing a TAP Client, mainly just for testing"""
 
 from scapy.layers.l2 import Ether
 from scapy.layers.inet import IP, UDP
 from scapy.packet import Packet
-
-import time
 
 from netlib.iproute import IPRoute
 from netlib.tap import Tap
@@ -42,5 +40,3 @@ if __name__ == "__main__":
 
     # Send at Layer 2 (Ethernet layer)
     tom.send(packet)
-
-    time.sleep(2)

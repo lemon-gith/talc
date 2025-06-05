@@ -1,12 +1,7 @@
-# from scapy.layers.l2 import Ether
-# from scapy.layers.inet import UDP
-from scapy.layers.inet import IP
+import asyncio
 
-from scapy.packet import Packet
-from scapy.packet import ls
-
-from cocotbext.eth.eth_mac import EthMacFrame
-from threading import Thread, current_thread
+# from cocotbext.eth.eth_mac import EthMacFrame
+# from scapy.packet import Packet
 
 from netlib.iproute import IPRoute
 from netlib.tap import Tap
@@ -18,91 +13,78 @@ class TAPServer:
 
     def __init__(self, tb):
         # instantiate TAP device
-        self.faucet = Tap()
+        self.tap = Tap()
 
         # attach to the tesbench (for access to DUT)
         self.tb = tb
 
-    def listen_tap(self):
+        # get the servers up and running
+        self._start()
+
+    def _start(self):
+        """Starts tap and mac servers"""
+        # TODO: why do I need to wrap functions in while True
+        # for asyncio to keep running them?
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self.loop)
+
+        self.taptask = self.loop.create_task(
+            self._serve_tap(), name="TapServer"
+        )
+        self.mactask = self.loop.create_task(
+            self._serve_mac(), name="McServer"
+        )
+
+        self.loop.run_forever()
+
+
+    async def serve_tap(self):
+        # TODO: rewrite this code to work for all interfaces
+        iface = self.tb.driver.interfaces[0]
+
+        self.tb.log.info("TAPServer.serve_tap: Listening for packet...")
+
+        packet = self.tap.listen()
+
+        self.tb.log.info("TAPServer.serve_tap: Got a packet!")
+
+        await self.tb.port_mac[iface.index*iface.port_count].rx.send(packet)
+            
+    async def serve_mac(self):
+        # TODO: rewrite this code to work for all interfaces
+        iface = self.tb.driver.interfaces[0]
+
+        self.tb.log.info("TAPServer.serve_mac: Listening for packet...")
+
+        packet = await self.tb.port_mac[iface.index*iface.port_count].tx.recv()
+
+        self.tb.log.info("TAPServer.serve_mac: Got a packet!")
+
+        self.tap.send(packet)
+
+
+    async def _serve_tap(self):
+        """wrapping serve_tap because I can't figure out asyncio's problems"""
         while True:
-            # Send at Layer 2 (Ethernet layer)
-            packet = self.faucet.listen()
+            await self.serve_tap()
 
-            print("Got a packet!")
+    async def _serve_mac(self):
+        """wrapping serve_mac because I can't figure out asyncio's problems"""
+        while True:
+            await self.serve_mac()
 
-            # TODO: send to nic
-
-            print("listening for next packet...")
-            # TODO: thread this function
-
-    def listen_mac(self):
-        # TODO: impl this, to be threaded
-        pass
 
     async def _send_to_nic(self):
-        # TODO: impl this, to be called by _listen_tap
+        # TODO: impl this, to be called by serve_tap, _if necessary_,
+        # I imagine the translation layer should, at worst, be:
+        # pkt: EthMacFrame = port_mac.tx.recv()
+        # packet: Packet = Ether(pkt.data)
         pass
 
-    # TODO: break this down into its separate parts to be split between
-    # this server and SimpleServer
-    async def nic_process(
-        self, packet: Packet, iface_num: int = 0, tx_ring: int = 0,
-        csum_start: int | None = None, csum_offset: int | None = None
-    ):
-        """Send a packet via the driver, through the NIC and pick it up from the MAC
 
-        Basically having the NIC process the packet
-
-        Parameters
-        ----------
-        packet: scapy.packet.Packet
-            the packet you want to pass through the DUT
-
-        iface_num: int = 0
-            which interface number would you like to send the packet from?
-
-        tx_ring: int = 0
-            which transmission ring would you like to use?
-
-        csum_start: int | None = None
-            yk, I'm not quite sure... sth to do with the checksum
-
-        csum_offset: int | None = None
-            yk, I'm not quite sure... sth to do with the checksum
-
-        Usage
-        -----
-        ```python
-        await send_through_nic(tb, test_pkt)
-        ```
-
-        or
-
-        ```python
-        eth = Ether(src='5A:51:52:53:54:55', dst='DA:D1:D2:D3:D4:D5')
-        ip = IP(src='192.168.1.100', dst='192.168.1.101')
-        udp = UDP(sport=1, dport=42)
-        payload = b"hiya"
-        packet = eth / ip / udp / payload
-
-        for iface_num in range(len(tb.driver.interfaces)):
-            await simple_packet_firehose(tb, packet, iface_num)
-        ```
-        """
-        iface = self.tb.driver.interfaces[iface_num]
-
-        # transmit the packet using the driver
-        await iface.start_xmit(packet.build(), tx_ring, csum_start, csum_offset)
-
-        # catch the packet at the MAC port
-        pkt = await self.tb.port_mac[iface_num].tx.recv()
-
-        return pkt
-
-
-
-class FaucetServer(TAPServer):
+class FaucetServer:
     """Just for playing around"""
+
     # instantiate ip helper
     ipr = IPRoute()
 
@@ -111,6 +93,10 @@ class FaucetServer(TAPServer):
         self.faucet = Tap()
 
     def listen(self):
+        # since these modules are only needed in here
+        from scapy.layers.inet import IP
+        from scapy.packet import ls
+
         # Send at Layer 2 (Ethernet layer)
         packet = self.faucet.listen()
 
@@ -154,12 +140,14 @@ class FaucetServer(TAPServer):
 
 
 if __name__ == "__main__":
-    tabby = FaucetServer()
+    from misc_utils import FakeTB
 
-    print("listening...")
-    while True:
-        try:
-            tabby.listen()
-        except KeyboardInterrupt:
-            print("aight, shutting down :)")
-            exit(0)
+    fiona = TAPServer(FakeTB())
+
+    print("outside loop...")
+    # while True:
+    #     try:
+    #         fiona.listen()
+    #     except KeyboardInterrupt:
+    #         print("\naight, shutting down :)")
+    #         exit(0)

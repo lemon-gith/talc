@@ -1,8 +1,8 @@
 {
   "name": "coruntb",
   "build": {
-    "dockerfile": "../containers/coruntb.Dockerfile",
-    "context": ".."
+    "dockerfile": "../../containers/coruntb.Dockerfile",
+    "context": "../.."
   },
   "runArgs": [
     /*

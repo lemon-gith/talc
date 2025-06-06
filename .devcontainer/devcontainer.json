@@ -27,7 +27,12 @@
       "source": "${localWorkspaceFolder}/containers/configs/siftcal/.vscode/",
       "target": "/siftcal/.vscode/"
     },
-    {  // add vscode config files to container, for devcontainer
+    {  // mount this, to keep changes
+      "type": "bind",
+      "source": "${localWorkspaceFolder}/containers/configs/requirements.txt",
+      "target": "/siftcal/requirements.txt"
+    },
+    {  // add my python utility libraries
       "type": "bind",
       "source": "${localWorkspaceFolder}/src/utils/py",
       "target": "/siftcal/pyutils/"

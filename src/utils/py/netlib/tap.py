@@ -5,7 +5,6 @@ from scapy.packet import Packet
 
 from pathlib import Path
 import subprocess
-import time
 
 from netlib.iproute import IPRoute
 
@@ -20,6 +19,7 @@ class Tap:
     """A wrapper around a linux tap interface"""
     def __init__(
         self, devname: str = "tap0", is_client: bool = False,
+        no_ip: bool = False, ip_addr: str = "10.0.0.1", mask: int = 24,
         no_su: bool = False, config_script: Path = Path("")
     ):
         """Either create and setup or attach to existing tap interface
@@ -31,6 +31,18 @@ class Tap:
 
         is_client: bool = False
             Is this Tap() instance a client to an existing Tap device, or not?
+
+        no_ip: bool = False
+            Should an IP address be assigned to this Tap device?
+            Default IP is 10.0.0.1
+            Note: this option is disregarded if no_su is True
+
+        ip_addr: str = "10.0.0.1"
+            What IPv4 address should be assigned to the Tap device?
+            Mask value is set separately
+
+        mask: int = 24
+            What should the subnet mask for the IPv4 address be?
 
         config_path: pathlib.Path = ""
             the path to the interface configuration script,
@@ -77,8 +89,8 @@ class Tap:
         # instantiate our wrapped tap device :D
         self.tap = TunTapInterface(devname, mode_tun=False)
 
-        # set device up and give it an ip address
-        if no_su:  # either without superuser, but lots of manual work
+        # set device up, and give it an ip address?
+        if no_su:
             if not config_script.exists():
                 config_script = Path(__file__).parent / "scripts/tap-config.sh"
 
@@ -98,7 +110,10 @@ class Tap:
                 print(f"err (tap):\n{err}")
                 return
 
-            out = ipr.addr("add", "10.0.0.1/24", "dev", self.dev)
+            if no_ip:
+                return
+
+            out = ipr.addr("add", f"{ip_addr}/{mask!s}", "dev", self.dev)
 
             if out.is_ok:
                 out = out.unwrap()
@@ -107,8 +122,6 @@ class Tap:
                 print(f"err (tap):\n{err}")
                 return
 
-        # give it a bit of time, idk
-        time.sleep(1)
 
     def listen(self):
         """listens to the TAP, until it receives a packet"""

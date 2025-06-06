@@ -1,16 +1,12 @@
-from threading import Thread, current_thread
-import os
-import sys
-import time
-
-# from pyutils.netlib.tap import Tap
-from tapaz import TAPServer
-from host.application import SimpleServer
-
-
 import cocotb
+from cocotb.triggers import Timer
+from decimal import Decimal
+
 from corunlib.testbench import TB
 from corunlib import mqnic
+
+from tapaz import TAPServer
+from host.application import SimpleServer
 
 # these are just a sanity check, to test that cocotb is still working correctly
 # expected behaviour: first one should PASS, second one should FAIL
@@ -48,35 +44,16 @@ async def run_testbed(dut):
 
     # -------------------- Start interactive testbed --------------------
 
-    # TODO: instantiate servers
+    tb.log.info("Instantiating Servers")
 
-    tabby = TAPServer()
+    _sam = SimpleServer(tb)
+    _tabby = TAPServer(tb)
 
-    # tb.log.info("Send a single packet: client.py test")
-    print("listening...")
+    tb.log.info("Running Servers...")
+    await Timer(Decimal(5), 'ns')
+
+    # If you don't keep the main function busy, it'll shut down the testbench
     while True:
-        tabby.listen()
-
-    # tabby = TAPClient()
-
-    # payload = bytes(
-    #     b"Greetings, weary traveller. Wait no, it is I who has travelled..."
-    # )
-    # udp = UDP(sport=12345, dport=8200)
-    # ip = IP(src="10.0.0.2", dst="10.0.0.1")
-    # eth = Ether(src="5A:51:52:53:54:55", dst="ff:ff:ff:ff:ff:ff")
-    # test_pkt = eth / ip / udp / payload
-
-    # pkt = await nic_process(tb, test_pkt)
-
-    # print(f"ETH PACKET INFORMATION: {pkt.data}")
-
-    # tabby.send(pkt)
-    # time.sleep(5)
-
-    # try to see if you can get the checksum working for a basic send
-    # if tb.driver.interfaces[0].if_feature_tx_csum:
-        # test_pkt2 = test_pkt.copy()
-        # test_pkt2[UDP].chksum = scapy.utils.checksum(bytes(test_pkt2[UDP]))
-
-        # await tb.driver.interfaces[0].start_xmit(test_pkt2.build(), 0, 34, 6)
+        await Timer(Decimal(10), 'us')
+        # to kill cocotb, send SIGQUIT (Ctrl+\ for me),
+        # don't send SIGINT (Ctrl+C), that makes it stall

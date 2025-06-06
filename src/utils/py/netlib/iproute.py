@@ -69,7 +69,7 @@ class IPRoute:
         else:
             return Err(
                 f"""err (ipr): command '{cmd}' failed:
-stdout: {out.stdout}\nstderr: {out.stderr}\nfull log: {out}
+  stdout: {out.stdout}\n  stderr: {out.stderr}\n  full log: {out}
                 """  # have to do it like this for the formatting...
             )
 
@@ -118,7 +118,8 @@ stdout: {out.stdout}\nstderr: {out.stderr}\nfull log: {out}
         out = self._sanitiser(*cmds)
         if out.is_err:
             return Err(
-                f"err (ipr): disallowed string, '{out.unwrap()}', in command"
+                "err (ipr): disallowed string,"
+                + f"'{out.unwrap_err()}', in devname..."
             )
 
         return self._run_cmd(
@@ -183,7 +184,8 @@ stdout: {out.stdout}\nstderr: {out.stderr}\nfull log: {out}
         out = self._sanitiser(*cmds)
         if out.is_err:
             return Err(
-                f"err (ipr): disallowed string, '{out.unwrap()}', in command"
+                "err (ipr): disallowed string,"
+                + f"'{out.unwrap_err()}', in devname..."
             )
 
         return self._run_cmd(
@@ -215,9 +217,160 @@ stdout: {out.stdout}\nstderr: {out.stderr}\nfull log: {out}
         out = self._sanitiser(*cmds)
         if out.is_err:
             return Err(
-                f"err (ipr): disallowed string, '{out.unwrap()}', in command"
+                "err (ipr): disallowed string,"
+                + f"'{out.unwrap_err()}', in devname..."
             )
-
         return self._run_cmd(
             ("sudo" if as_root else "")+ f"ip {' '.join(cmds)}"
         )
+
+
+    def _parse_ip_addr_dev(
+        self, lines: list[list[str]]
+    ) -> dict[str, list[dict]]:
+        """internal function to parse the output of 'ip addr show {dev}'"""
+        existing_items = dict()
+
+        info = dict()
+        for line in lines:
+            count = len(line)
+            if count == 0:
+                continue
+
+            match line[0]:
+                case "link/ether":
+                    scrutinee = line[0]
+                    if scrutinee not in existing_items:
+                        existing_items[scrutinee] = 0
+                        info["eth"] = list()
+                    else:
+                        existing_items[scrutinee] += 1
+
+                    info["eth"].append(dict())
+                    idx = existing_items[scrutinee]
+
+                    info["eth"][idx]["addr"] = line[1]
+
+                    if count < 3:
+                        continue
+
+                    i = 2
+                    while i < count:
+                        match line[i]:
+                            case "brd":
+                                info["eth"][idx]["brd"] = line[i+1]
+                                i += 1
+                            case _:
+                                pass
+                        i += 1
+
+                case "inet":
+                    scrutinee = line[0]
+                    if scrutinee not in existing_items:
+                        existing_items[scrutinee] = 0
+                        info["ip"] = list()
+                    else:
+                        existing_items[scrutinee] += 1
+
+                    info["ip"].append(dict())
+                    idx = existing_items[scrutinee]
+
+                    addr_mask = line[1].split('/')
+                    match len(addr_mask):
+                        case 1:
+                            info["ip"][idx]["addr"] = addr_mask[0]
+                        case 2:
+                            info["ip"][idx]["addr"] = addr_mask[0]
+                            info["ip"][idx]["mask"] = addr_mask[1]
+                        case _:
+                            raise ValueError(
+                                f"err (ipr): what is this? {addr_mask}"
+                            )
+
+                    if count < 3:
+                        continue
+
+                    i = 2
+                    while i < count:
+                        match line[i]:
+                            case "brd":
+                                info["ip"][idx]["brd"] = line[i+1]
+                                i += 1
+                            case "scope":
+                                info["ip"][idx]["scope"] = line[i+1]
+                                i += 1
+                            case _:
+                                pass
+                        i += 1
+
+                case "inet6":
+                    scrutinee = line[0]
+                    if scrutinee not in existing_items:
+                        existing_items[scrutinee] = 0
+                        info["ip6"] = list()
+                    else:
+                        existing_items[scrutinee] += 1
+
+                    info["ip6"].append(dict())
+                    idx = existing_items[scrutinee]
+
+                    addr_mask = line[1].split('/')
+                    match len(addr_mask):
+                        case 1:
+                            info["ip6"][idx]["addr"] = addr_mask[0]
+                        case 2:
+                            info["ip6"][idx]["addr"] = addr_mask[0]
+                            info["ip6"][idx]["mask"] = addr_mask[1]
+                        case _:
+                            raise ValueError(
+                                f"err (ipr): what is this? {addr_mask}"
+                            )
+
+                    if count < 3:
+                        continue
+
+                    i = 2
+                    while i < count:
+                        match line[i]:
+                            case "brd":
+                                info["ip6"][idx]["brd"] = line[i+1]
+                                i += 1
+                            case "scope":
+                                info["ip6"][idx]["scope"] = line[i+1]
+                                i += 1
+                            case _:
+                                pass
+                        i += 1
+
+        return info
+
+
+    def get_addr_info(self, devname: str = "eth0") -> dict:
+        """Runs 'ip addr show {devname}' and parses the output into a dict"""
+
+        out = self._sanitiser(devname)
+        if out.is_err:
+            raise RuntimeError(
+                "err (ipr): disallowed string,"
+                + f"'{out.unwrap_err()}', in devname..."
+            )
+
+        cmd = f"ip addr show {devname}"
+
+        out = self._run_cmd(cmd)
+        if out.is_err:
+            raise RuntimeError(
+                f"err (ipr): failed to run '{cmd}':\n{out.unwrap_err()}"
+            )
+
+        # I'm really banking on the output for `ip addr` being consistent...
+        lines = [  # split by line, then split line by spaces
+            line.strip().split() for line in out.unwrap().stdout.split('\n')
+        ]
+
+        try:
+            return self._parse_ip_addr_dev(lines)
+        except ValueError as e:
+            raise ValueError(
+                f"err (ipr): failed to parse output of '{cmd}' \n{e}"
+            )

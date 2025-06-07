@@ -26,7 +26,7 @@ latest_log=$log_dir/$(ls -t $log_dir | head -n 1)
 # help output
 function print_help {
 	local base_name=$(basename $0)
-    local myloc=$(realpath $base_name)  # not super portable, but works :p
+    local mydir=$(cd "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)
 
 	local c="\e[0m"  # clear colour
 	local b="\e[94m"  # blue
@@ -102,7 +102,7 @@ function print_help {
 	echo -e "       to support this common existence check"
     echo  # my shorthands take inspiration from iproute2's ip utility
     echo "P.S. all of my commands have shorthands, to find out what they are,"
-    echo -e "please come read my source file at: $bb$myloc$c :)"
+    echo -e "please come read my source file at: $bb$mydir/cory$c :)"
 }
 
 function print_tips {

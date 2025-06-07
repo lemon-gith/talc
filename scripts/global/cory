@@ -271,13 +271,8 @@ case $1 in
                 ;;
         esac
         ;;
-    v | -v | -V | --version)
-        # just to support this, as if I were a real CLI utility... alas
-        echo "Hi, I'm cory, version 0.6.0 (this number was arbitrarily chosen)"
-        exit 0
-        ;;
     g | get)
-        if [ -z $2 ]  # TODO: e.g. ${g}cory g ll | cory s$c
+        if [ -z $2 ]
         then
             echo "Hiya, what would you like me to get for you? :)"
             echo "Here is a list of the variables I can output the values of:"
@@ -310,6 +305,11 @@ case $1 in
         ;;
     t | tips)
         print_tips
+        ;;
+    v | -v | -V | --version)
+        # just to support this, as if I were a real CLI utility... alas
+        echo "Hi, I'm cory, version 0.7.0 (this number was arbitrarily chosen)"
+        exit 0
         ;;
     e | encourage | encouragement)
         # idk, if the work becomes too gruelling

@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# little script to help me activate the venv from anywhere in the container
+
+# note: this script must be `source`d to work
+re="^.*(ba)?sh$"
+if ! [[ $0 =~ $re ]]
+then
+    echo "error: this is running in a subshell ($0), please source it instead,"
+    echo "       e.g. '. activenv' or 'source activenv'"
+    exit 2
+fi
+
+if [ -z $1 ]
+then
+    # because in all my containers, python venv/ has depth of 1 from root
+    venv_path=$(find / -mindepth 2 -maxdepth 2 -name venv)
+else
+    venv_path=$1
+fi
+
+source $venv_path/bin/activate

@@ -1,0 +1,328 @@
+#!/bin/bash
+
+# Greetings, I'm a helpful script whose job it is
+# to make running various useful commands easier :)
+
+if [ -z $1 ]
+then
+    echo "You called? What would you like me to do? :)"
+    echo "    Please pass a command, e.g. 'help' to get help page"
+    exit 2
+fi
+
+
+cor_home=${TBCORHOME:-/talc/tb/testbed}
+datetime=$(date +%Y%m%d_%H%M%S)
+
+# make log storage directory, out of the way of the user
+log_dir="/tmp/cocologs"
+mkdir -p $log_dir
+
+# still need to add the type and extension
+logfile_base="$log_dir/$datetime"
+latest_log=$log_dir/$(ls -t $log_dir | head -n 1)
+
+
+# help output
+function print_help {
+	local base_name=$(basename $0)
+    local mydir=$(cd "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)
+
+	local c="\e[0m"  # clear colour
+	local b="\e[94m"  # blue
+	local bb="\e[1;94m"  # bold, blue
+	local bfgb="\e[34;42m"  # blue foreground, green background (like ls dir/)
+	local g="\e[32m"  # green
+	local y="\e[33m"  # yellow
+	local p="\e[35m"  # purple
+
+	echo -e "Usage: $bb$base_name$c$b COMMAND [ OPTION | FLAG ]*$c"
+	echo  # instead of using "\n", as it makes this fn easier to update, too
+    echo -e "$bb$base_name$c$b help$c"
+	echo -e "       You've just used this command to get this help message :)"
+    echo
+	echo -e "$bb$base_name$c$b [ run | test ] [ FLAG ]?$c"
+	echo -e "       I'll move to $bb$cor_home$c and run the"\
+        "( testbed | DUT testbench )"
+	echo -e "    $b [ run | test ] [ -d | --display-inline ]$c"
+	echo -e "       Will output logs to stdout and log dir: $bb$log_dir$c"
+	echo -e "    $b [ run | test ] [ -l | --log ]$c $y <- default$c"
+	echo -e "       Only write logs to log dir: $bb$log_dir$c"
+    echo -e "\n     e.g.$g cory run$c  <- will run the testbed"\
+        "and write to logs only"
+    echo -e "     Note: logs consist of both stdout and stderr from the command"
+    echo
+	echo -e "$bb$base_name$c$b interact$c"
+	echo -e "       I'll move to $bb$cor_home$c and opens the$p scapy$c"\
+        "interactive terminal for you"
+    echo
+	echo -e "${bb}[source | .] $base_name$c$b cd [ home | logs ]?$c"
+	echo -e "       Moves you to a particular directory of importance."
+	echo -e "       THIS COMMAND MUST BE SOURCED TO WORK!"
+    echo -e "       (also mistypes will now close your terminal :p)"
+    echo -e "      $p home$c = $bfgb$cor_home$c $y <- default$c"
+    echo -e "      $p logs$c = $bfgb$log_dir$c"
+    echo
+	echo -e "$bb$base_name$c$b logs TYPE [ OPTION VAL ]*$c"
+	echo -e "       I'll help you watch the log outputs, as they are written"
+	echo -e "    $b logs full"\
+        "[ [ -f | --frequency ] VAL | [-l | --length ] VAL ]*$c $y <- default$c"
+	echo -e "       The full log output, everything being written, unabridged"
+    echo -e "      $p -f (VAL: float = 0.1)$c sets frequency of watch updates"\
+        "(in seconds)"
+    echo -e "      $p -l (VAL: int = 5)$c sets length of tail output (in lines)"
+	echo -e "    $b logs short$c"
+	echo -e "       Abridged output, displaying only server-summary lines"
+	echo -e "    $b logs empty$c"
+	echo -e "       like watching paint dry, except, there is no paint..."
+    echo
+	echo -e "$bb$base_name$c$b dev DEVNAME [ FLAG ]*$c"
+	echo -e "    $b dev DEVNAME [ -l | --link ]$c"
+	echo -e "       watches link details of DEVNAME device (${p}-f/-n 0.6$c)"
+	echo -e "    $b dev DEVNAME [ -a | --addr | --ip-address ]$c"\
+        "$y <- default$c"
+	echo -e "       watches address details of DEVNAME device (${p}-f/-n 0.6$c)"
+    echo
+	echo -e "$bb$base_name$c$b get VARNAME$c"
+	echo -e "       output just the value of certain useful variables"
+    echo -e "       the available variables are:"\
+        "${p}home logdir latestlog datetime$c"
+    echo -e "       useful for command chaining, e.g.$g cory g ll | cory s$c"
+    echo
+	echo -e "$bb$base_name$c$b summarise LOGFILE$c"
+	echo -e "       summarise an existing LOGFILE, same as stdout with"\
+        "${g}cory logs short$c,"
+    echo -e "       except that this also removes those CORYSUMMARY tags :)"
+    echo
+	echo -e "$bb$base_name$c$b tips$c"
+	echo -e "       just a page with various tips on how to use cory"
+	echo -e "       and how to use the talc testbed (md formatted)"
+    echo  # leave encouragement option undocumented ;)
+	echo -e "$bb$base_name$c$b [ v | -v | -V | --version ]$c"
+	echo -e "       to support this common existence check"
+    echo  # my shorthands take inspiration from iproute2's ip utility
+    echo "P.S. all of my commands have shorthands, to find out what they are,"
+    echo -e "please come read my source file at: $bb$mydir/cory$c :)"
+}
+
+function print_tips {
+	local c="\e[0m"  # clear colour
+	local b="\e[94m"  # blue
+	local bb="\e[1;94m"  # bold, blue
+	local bfgb="\e[34;42m"  # blue foreground, green background (like ls dir/)
+	local g="\e[32m"  # green
+	local y="\e[33m"  # yellow
+	local p="\e[35m"  # purple
+    echo "# Cory's tips"
+    echo
+    echo "## Cory Tips"
+    echo "- You must run$g cory logs [ f | s ]$c after$g cory run$c,"
+    echo "  otherwise cory will track the wrong log file :}"
+    echo
+    echo "## Talc Tips"
+    echo "None yet, sorry :("
+    echo
+}
+
+function check_sourced {
+    # if the specific function requires sourcing to take effect
+    re="^.*(ba)?sh$"
+    if ! [[ $0 =~ $re ]]
+    then
+        local base_name=$(basename $0)
+        echo "Ahh, I'm in a subshell ($0), that command needs me to be sourced,"
+        echo "       e.g. '. $base_name' or 'source $base_name'"
+        exit 2
+    fi
+}
+
+unrecognised_command() {
+    echo "Sorry, 'cory $@' is not a command I know how to run :}"
+    echo "    Try running the command 'help' to see available commands."
+    exit 2
+}
+
+case $1 in
+    h | -h | help | --help)
+        print_help
+        exit 0
+        ;;
+    # could collapse r and t to reduce code, but I think this is more readable
+    r | run)
+        cd $cor_home
+
+        inline_output=${2:--l}
+        case $2 in
+            -d | --display-inline)
+                MODULE=run_testbed make | tee $logfile_base-int.log 2>&1
+                ;;
+            -l | --log)
+                MODULE=run_testbed make > $logfile_base-int.log 2>&1
+                ;;
+            *)
+                unrecognised_command "run" $2
+                ;;
+        esac
+        ;;
+    t | test)
+        cd $cor_home
+
+        inline_output=${2:--l}
+        case $2 in
+            -d | --display-inline)
+                MODULE=test_corundum make | tee $logfile_base-test.log 2>&1
+                ;;
+            l | -l | --log)
+                MODULE=test_corundum make > $logfile_base-test.log 2>&1
+                ;;
+            *)
+                unrecognised_command "test" $2
+                ;;
+        esac
+        ;;
+    i | int | interact | interactive)
+        cd $cor_home
+        python -m scapy
+        ;;
+    c | cd | travel)
+        check_sourced
+        dest=${2:-wherever}
+        case $dest in
+            h | home)
+                cd $cor_home
+                ;;
+            l | logs)
+                cd $log_dir
+                ;;
+            wherever)
+                # should only be triggered if cd but $2 is unset
+                echo "cory go home"
+                cd $cor_home
+                ;;
+            *)
+                unrecognised_command "cd" $2
+                ;;
+        esac
+        ;;
+    l | log | logs)
+        log_type=${2:-full}
+
+        case $2 in
+            f | full)
+                vals=(0.1 5)  # default values for command
+                opt_val=0
+                for opt in ${@:3}
+                do
+                    if [ $opt_val == 0 ]
+                    then
+                        # Note: I don't accept -n for either, as it might be
+                        # confusing to assign it to only one of watch/tail
+                        case $opt in
+                            -f | --frequency)
+                                opt_val=1
+                                ;;
+                            -l | --length)
+                                opt_val=2
+                                ;;
+                            *)
+                                unrecognised_command "watch" "full" $opt
+                                ;;
+                        esac
+                    else
+                        vals[$opt_val]=$opt
+                    fi
+                done
+                watch -n ${vals[0]} tail -n ${vals[1]} $latest_log
+                ;;
+            s | short | summary | servers)
+                # I don't rm the tag here, less processing, as this is realtime
+                tail -f $latest_log | grep --colour=never "<CORYSUMMARY>"
+                ;;
+            e | empty)
+                echo "I have no idea why you would select this option..."
+                echo "Welcome to /dev/null/:"
+                tail -f /dev/null
+                ;;
+            *)
+            unrecognised_command "watch" $2
+            ;;
+        esac
+        ;;
+    d | dev | device)
+        devname=${2:-tap0}
+        if [[ $devname == -* ]]
+        then
+            echo "Sorry, to me '$devname' looks like a flag not a device name"
+            echo "    The correct syntax for this is 'dev [ DEVNAME [ FLAG ] ]'"
+            exit 2
+        fi
+
+        flag=${3:-default}
+        case $flag in
+            -l | --link)
+                watch -n 0.6 ip link show $devname
+                ;;
+            -a | --addr | --address | --ip-address)
+                watch -n 0.6 ip addr show $devname
+                ;;
+            default)
+                # should only be triggered if dev but $3 is unset
+                echo "cory watch $devname's addresses"
+                watch -n 0.6 ip addr show $devname
+                ;;
+            *)
+                unrecognised_command "dev" $devname $2
+                ;;
+        esac
+        ;;
+    g | get)
+        if [ -z $2 ]
+        then
+            echo "Hiya, what would you like me to get for you? :)"
+            echo "Here is a list of the variables I can output the values of:"
+            echo -e "    home      = $cor_home"
+            echo -e "    logdir    = $log_dir"
+            echo -e "    latestlog = $latest_log"
+            echo -e "    datetime  = $datetime"
+            exit 2
+        fi
+        case $2 in
+            # just output what's needed, in case being used for other commands
+            h | home | w | wd | workdir)
+                echo "$cor_home"
+                ;;
+            ld | logdir | logsdir)
+                echo "$log_dir"
+                ;;
+            ll | latestlog)
+                echo "$latest_log"
+                ;;
+            d | dt | datetime)
+                echo "$datetime"
+                ;;
+            *)
+                unrecognised_command "get" $2
+                ;;
+        esac
+        ;;
+    s | summ | summarise)
+        file=${2:-$latest_log}
+        # use sed to remove the tag, cos it's cleaner like that :)
+        grep "<CORYSUMMARY>" $file | sed "s/<CORYSUMMARY> //"
+        ;;
+    t | tips)
+        print_tips
+        ;;
+    v | -v | -V | --version)
+        # just to support this, as if I were a real CLI utility... alas
+        echo "Hi, I'm cory, version 0.7.0 (this number was arbitrarily chosen)"
+        exit 0
+        ;;
+    e | encourage | encouragement)
+        # idk, if the work becomes too gruelling
+        echo "You got this! (૭ ｡•̀ ᵕ •́｡ )૭"
+        ;;
+    *)
+        unrecognised_command $1
+        ;;
+esac

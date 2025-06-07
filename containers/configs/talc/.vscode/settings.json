@@ -3,6 +3,9 @@
     // Because I have ruff to do that for me
     "reportUnusedImport": "none",
     // Downgrade to a warning because cocotbext is full of them
-    "reportOptionalMemberAccess": "warning",
-  }
+    "reportOptionalMemberAccess": "warning"
+  },
+  "python.defaultInterpreterPath": "/talc/venv/bin/python3.12",
+  "python.terminal.activateEnvironment": true,
+  "python.locator": "js"
 }

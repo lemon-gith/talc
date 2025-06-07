@@ -1,8 +1,8 @@
 {
-  "name": "talc",
+  "name": "coruntb",
   "build": {
-    "dockerfile": "../containers/talc.Dockerfile",
-    "context": ".."
+    "dockerfile": "../../containers/coruntb.Dockerfile",
+    "context": "../.."
   },
   "runArgs": [
     /*
@@ -19,30 +19,19 @@
     // the tun device needs to be carried over into the containers
     "--device=/dev/net/tun:/dev/net/tun"
   ],
-  // mount testbed directory to save changes outside of container
-  "workspaceMount": "source=${localWorkspaceFolder}/src/tb/,target=/talc/tb/testbed/,type=bind",
-  "workspaceFolder": "/talc",
+  "workspaceMount": "source=${localWorkspaceFolder}/src/tb/,target=/corundum/fpga/app/template/tb/coruntb,type=bind",
+  "workspaceFolder": "/corundum",
   "mounts": [
     {  // add vscode config files to container, for devcontainer
       "type": "bind",
-      "source": "${localWorkspaceFolder}/containers/configs/talc/.vscode/",
-      "target": "/talc/.vscode/"
+      "source": "${localWorkspaceFolder}/containers/configs/coruntb/.vscode/",
+      "target": "/corundum/.vscode/"
     },
-    {  // mount this, to keep changes to requirements
+    {  // add vscode config files to container, for devcontainer
       "type": "bind",
-      "source": "${localWorkspaceFolder}/containers/configs/requirements.txt",
-      "target": "/talc/requirements.txt"
-    },
-    {  // add my python utility libraries
-    "type": "bind",
-    "source": "${localWorkspaceFolder}/src/utils/py",
-    "target": "/talc/pyutils/"
-    },
-    {  // mount rtl directory to save changes outside of container
-      "type": "bind",
-      "source": "${localWorkspaceFolder}/nics/corundum/fpga/app/svird/rtl/",
-      "target": "/talc/rtl/"
-    }  // note: all other corundum files in container are NOT MOUNTED
+      "source": "${localWorkspaceFolder}/src/tap/py/",
+      "target": "/tapaz/"
+    }
   ],
 
   "customizations": {

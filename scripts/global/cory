@@ -208,11 +208,8 @@ case $1 in
                 watch -n ${vals[0]} tail -n ${vals[1]} $latest_log
                 ;;
             s | short | summary | servers)
-                # TODO: sth like this?
-                # tail -f $latest_log | grep --colour=never CORYSUMMARY
-                # then need to add corresponding log outputs to files
-                echo "Error 501: Not implemented"
-                exit 1
+                # I don't rm the tag here, less processing, as this is realtime
+                tail -f $latest_log | grep --colour=never "<CORYSUMMARY>"
                 ;;
             e | empty)
                 echo "I have no idea why you would select this option..."
@@ -253,15 +250,13 @@ case $1 in
         ;;
     v | -v | -V | --version)
         # just to support this, as if I were a real CLI utility... alas
-        echo "Hi, I'm cory, version 0.5.0 (this number was arbitrarily chosen)"
+        echo "Hi, I'm cory, version 0.6.0 (this number was arbitrarily chosen)"
         exit 0
         ;;
     s | summ | summarise)
-        # TODO: just cos why not, have cory go through a given log file and summ
-        # if not passed, cory will grab latest
-        # but writing to a new file is up to user: `> newfile.log`
-        echo "Error 501: Not implemented"
-        exit 1
+        file=${2:-$latest_log}
+        # use tr to delete the tag, cos it's nicer like that :)
+        grep --colour=never "<CORYSUMMARY>" $file | tr -d '<CORYSUMMARY> '
         ;;
     t | tips)
         print_tips

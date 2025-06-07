@@ -286,8 +286,8 @@ case $1 in
         ;;
     s | summ | summarise)
         file=${2:-$latest_log}
-        # use tr to delete the tag, cos it's nicer like that :)
-        grep --colour=never "<CORYSUMMARY>" $file | tr -d '<CORYSUMMARY> '
+        # use sed to remove the tag, cos it's cleaner like that :)
+        grep "<CORYSUMMARY>" $file | sed "s/<CORYSUMMARY> //"
         ;;
     t | tips)
         print_tips

@@ -6,7 +6,7 @@
 if [ -z $1 ]
 then
     echo "You called? What would you like me to do? :)"
-    echo -e "    Please pass a command, e.g. 'help' to get help page"
+    echo "    Please pass a command, e.g. 'help' to get help page"
     exit 2
 fi
 
@@ -135,11 +135,11 @@ case $1 in
         inline_output=${2:--l}
         case $2 in
             -d | --display-inline)
-                MODULE=run_testbed make 2>&1 | tee $logfile_base-int.log
+                MODULE=run_testbed make | tee $logfile_base-int.log 2>&1
                 ;;
             # -l | --log)  # would work if you wanna add more options
             *)
-                MODULE=run_testbed make 2>&1 > $logfile_base-int.log
+                MODULE=run_testbed make > $logfile_base-int.log 2>&1
                 ;;
         esac
         ;;
@@ -149,11 +149,11 @@ case $1 in
         inline_output=${2:--l}
         case $2 in
             -d | --display-inline)
-                MODULE=test_corundum make 2>&1 | tee $logfile_base-test.log
+                MODULE=test_corundum make | tee $logfile_base-test.log 2>&1
                 ;;
             # l | -l | --log)  # would work if you wanna add more options
             *)
-                MODULE=test_corundum make 2>&1 > $logfile_base-test.log
+                MODULE=test_corundum make > $logfile_base-test.log 2>&1
                 ;;
         esac
         ;;

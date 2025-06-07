@@ -257,6 +257,33 @@ case $1 in
         echo "Hi, I'm cory, version 0.6.0 (this number was arbitrarily chosen)"
         exit 0
         ;;
+    g | get)
+        if [ -z $2 ]  # TODO: e.g. ${g}cory g ll | cory s$c
+        then
+            echo "Hiya, what would you like me to get for you? :)"
+            echo "Here is a list of the variables I can output the values of:"
+            echo -e "    home      = $cor_home"
+            echo -e "    logdir    = $log_dir"
+            echo -e "    latestlog = $latest_log"
+            echo -e "    datetime  = $datetime"
+            exit 2
+        fi
+        case $2 in
+            # just output what's needed, in case being used for other commands
+            h | home | w | wd | workdir)
+                echo "$cor_home"
+                ;;
+            ld | logdir | logsdir)
+                echo "$log_dir"
+                ;;
+            ll | latestlog)
+                echo "$latest_log"
+                ;;
+            d | dt | datetime)
+                echo "$datetime"
+                ;;
+        esac
+        ;;
     s | summ | summarise)
         file=${2:-$latest_log}
         # use tr to delete the tag, cos it's nicer like that :)

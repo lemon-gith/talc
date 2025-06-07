@@ -7,6 +7,7 @@ from cocotbext.eth import EthMacFrame
 from scapy.layers.inet import IP, UDP, TCP
 from scapy.layers.l2 import Ether
 from scapy.packet import Packet
+from scapy.utils import checksum
 
 from netlib.iproute import IPRoute
 
@@ -79,15 +80,18 @@ class SimpleServer:
         if IP in packet:
             packet[IP].dst = packet[IP].src
             packet[IP].src = self.ip_addr
+            del packet[IP].chksum  # make scapy recalculate checksum
         if UDP in packet:
             packet[UDP].sport, packet[UDP].dport = (
                 packet[UDP].dport, packet[UDP].sport
             )
+            del packet[UDP].chksum  # make scapy recalculate checksum
         # adding this for completeness for now
         if TCP in packet:
             packet[TCP].sport, packet[TCP].dport = (
                 packet[TCP].dport, packet[TCP].sport
             )
+            del packet[TCP].chksum  # is this right?
 
         return packet
 

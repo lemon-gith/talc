@@ -152,7 +152,7 @@ case $1 in
         cd $cor_home
 
         inline_output=${2:--l}
-        case $2 in
+        case $inline_output in
             -d | --display-inline)
                 MODULE=run_testbed make | tee $logfile_base-int.log 2>&1
                 ;;
@@ -168,7 +168,7 @@ case $1 in
         cd $cor_home
 
         inline_output=${2:--l}
-        case $2 in
+        case $inline_output in
             -d | --display-inline)
                 MODULE=test_corundum make | tee $logfile_base-test.log 2>&1
                 ;;
@@ -207,7 +207,7 @@ case $1 in
     l | log | logs)
         log_type=${2:-full}
 
-        case $2 in
+        case $log_type in
             f | full)
                 vals=(0.1 5)  # default values for command
                 opt_val=0

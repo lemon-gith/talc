@@ -7,6 +7,10 @@ If they're not accessible to you, please check the [debugging section](#debuggin
 
 A little script ported over from my personal desktop that just activates python `venv`s.
 
+>![NOTE]
+>The reason there are two, is just so that the default can be set differently between the corundum and talc containers\
+> They're manually handled within the build process, which isn't ideal, but I didn't want to add complexity to the activenv script
+
 ## privesc
 
 A small utility that acts as a getter/setter for net capabilities.

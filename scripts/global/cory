@@ -11,7 +11,7 @@ then
 fi
 
 
-cor_home=${TBCORHOME:-/siftcal/tb/testbed}
+cor_home=${TBCORHOME:-/talc/tb/testbed}
 datetime=$(date +%Y%m%d_%H%M%S)
 
 # make log storage directory, out of the way of the user

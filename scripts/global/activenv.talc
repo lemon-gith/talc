@@ -11,6 +11,6 @@ then
     exit 2
 fi
 
-venv_path=${1:-/siftcal/venv}
+venv_path=${1:-/talc/venv}
 
 source $venv_path/bin/activate

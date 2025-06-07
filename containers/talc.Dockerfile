@@ -37,32 +37,35 @@ RUN apt-get install -y verilator python3-venv iverilog
 WORKDIR /usr/local/bin
 COPY ./scripts/global .
 RUN chmod +x ./*
-RUN rm ./activenv.corundum && mv ./activenv.siftcal ./activenv
+RUN rm ./activenv.corundum && mv ./activenv.talc ./activenv
 
 # to update/add scripts, you can use the following command:
 # docker cp ./scripts/<filename> cortb:/usr/local/bin/
 
 # make directory for TAP stuff
-RUN mkdir -p /siftcal/pyutils/netlib
+RUN mkdir -p /talc/pyutils/netlib
 # add the pyutils directory to PYTHONPATH, so its libraries are recognised
 RUN echo -e \
-  "\nexport PYTHONPATH=\${PYTHONPATH:+\${PYTHONPATH}:}/siftcal/pyutils/" >> \
+  "\nexport PYTHONPATH=\${PYTHONPATH:+\${PYTHONPATH}:}/talc/pyutils/" >> \
   ~/.bashrc
 
 # make the corundum directory and work there
-RUN mkdir -p /siftcal
-WORKDIR /siftcal
+RUN mkdir -p /talc
+WORKDIR /talc
 
 # copy over corundum files
-COPY --from=build-image /coruncopy/ /siftcal/
+COPY --from=build-image /coruncopy/ /talc/
+
+# set an env var for the main working directory
+ENV TBCORHOME=/talc/tb/testbed
 
 # make sure the requirements are ported over
-COPY ./containers/configs/requirements.txt /siftcal/
+COPY ./containers/configs/requirements.txt /talc/
 
 # set up cocotb tools
 RUN python3 -m venv venv
 RUN . activenv && pip install --upgrade pip
-RUN . activenv && pip install -r /siftcal/requirements.txt
+RUN . activenv && pip install -r /talc/requirements.txt
 
 # TODO: Since I'm maintaining the overall file structure,
 # can just give short instruction on how to port to full repo
@@ -78,8 +81,8 @@ ENTRYPOINT [ "sleep", "infinity" ]
 # make sure to run the `docker run` command below
 
 # run from repo root:
-# docker build -t siftcal -f containers/siftcal.Dockerfile .
-# docker run -d --name itcal --gpus=all --cap-add=NET_RAW --cap-add=NET_ADMIN --device /dev/net/tun:/dev/net/tun --mount type=bind,src=./src/tb,dst=/siftcal/tb/testbed/ --mount type=bind,src=./src/tap/py/,dst=/siftcal/pyutils/tapaz/ siftcal
-# docker exec -it itcal bash
+# docker build -t talc -f containers/talc.Dockerfile .
+# docker run -d --name tlc --gpus=all --cap-add=NET_RAW --cap-add=NET_ADMIN --device /dev/net/tun:/dev/net/tun --mount type=bind,src=./src/tb,dst=/talc/tb/testbed/ --mount type=bind,src=./src/tap/py/,dst=/talc/pyutils/tapaz/ talc
+# docker exec -it tlc bash
 
 # then you can run make to run the testbench with `make`

@@ -1,7 +1,7 @@
 {
-  "name": "siftcal",
+  "name": "talc",
   "build": {
-    "dockerfile": "../containers/siftcal.Dockerfile",
+    "dockerfile": "../containers/talc.Dockerfile",
     "context": ".."
   },
   "runArgs": [
@@ -19,23 +19,23 @@
     // the tun device needs to be carried over into the containers
     "--device=/dev/net/tun:/dev/net/tun"
   ],
-  "workspaceMount": "source=${localWorkspaceFolder}/src/tb/,target=/siftcal/tb/testbed/,type=bind",
-  "workspaceFolder": "/siftcal",
+  "workspaceMount": "source=${localWorkspaceFolder}/src/tb/,target=/talc/tb/testbed/,type=bind",
+  "workspaceFolder": "/talc",
   "mounts": [
     {  // add vscode config files to container, for devcontainer
       "type": "bind",
-      "source": "${localWorkspaceFolder}/containers/configs/siftcal/.vscode/",
-      "target": "/siftcal/.vscode/"
+      "source": "${localWorkspaceFolder}/containers/configs/talc/.vscode/",
+      "target": "/talc/.vscode/"
     },
     {  // mount this, to keep changes
       "type": "bind",
       "source": "${localWorkspaceFolder}/containers/configs/requirements.txt",
-      "target": "/siftcal/requirements.txt"
+      "target": "/talc/requirements.txt"
     },
     {  // add my python utility libraries
       "type": "bind",
       "source": "${localWorkspaceFolder}/src/utils/py",
-      "target": "/siftcal/pyutils/"
+      "target": "/talc/pyutils/"
     }
   ],
 

@@ -5,7 +5,7 @@
     // Downgrade to a warning because cocotbext is full of them
     "reportOptionalMemberAccess": "warning"
   },
-  "python.defaultInterpreterPath": "/siftcal/venv/bin/python3.12",
+  "python.defaultInterpreterPath": "/talc/venv/bin/python3.12",
   "python.terminal.activateEnvironment": true,
   "python.locator": "js"
 }

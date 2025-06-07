@@ -137,7 +137,7 @@ function check_sourced {
 }
 
 unrecognised_command() {
-    echo "Sorry, '$@' is not a command I know how to run :}"
+    echo "Sorry, 'cory $@' is not a command I know how to run :}"
     echo "    Try running the command 'help' to see available commands."
     exit 2
 }
@@ -156,9 +156,11 @@ case $1 in
             -d | --display-inline)
                 MODULE=run_testbed make | tee $logfile_base-int.log 2>&1
                 ;;
-            # -l | --log)  # would work if you wanna add more options
-            *)
+            -l | --log)
                 MODULE=run_testbed make > $logfile_base-int.log 2>&1
+                ;;
+            *)
+                unrecognised_command "run" $2
                 ;;
         esac
         ;;
@@ -170,9 +172,11 @@ case $1 in
             -d | --display-inline)
                 MODULE=test_corundum make | tee $logfile_base-test.log 2>&1
                 ;;
-            # l | -l | --log)  # would work if you wanna add more options
-            *)
+            l | -l | --log)
                 MODULE=test_corundum make > $logfile_base-test.log 2>&1
+                ;;
+            *)
+                unrecognised_command "test" $2
                 ;;
         esac
         ;;
@@ -295,6 +299,9 @@ case $1 in
                 ;;
             d | dt | datetime)
                 echo "$datetime"
+                ;;
+            *)
+                unrecognised_command "get" $2
                 ;;
         esac
         ;;

@@ -157,6 +157,10 @@ case $1 in
                 ;;
         esac
         ;;
+    i | int | interact | interactive)
+        cd $cor_home
+        python -m scapy
+        ;;
     c | cd | travel)
         check_sourced
         dest=${2:-wherever}

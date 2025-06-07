@@ -1,6 +1,6 @@
 [submodule "nics/corundum"]
 	path = nics/corundum
-	url = https://github.com/corundum/corundum.git
+	url = https://github.com/lemon-gith/corundum.git
 [submodule "nics/tunic"]
 	path = nics/tunic
 	url = https://github.com/lemon-gith/tunic.git

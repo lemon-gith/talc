@@ -26,6 +26,8 @@ latest_log=$log_dir/$(ls -t $log_dir | head -n 1)
 # help output
 function print_help {
 	local base_name=$(basename $0)
+    local myloc=$(realpath $base_name)  # not super portable, but works :p
+
 	local c="\e[0m"  # clear colour
 	local b="\e[94m"  # blue
 	local bb="\e[1;94m"  # bold, blue
@@ -33,13 +35,14 @@ function print_help {
 	local g="\e[32m"  # green
 	local y="\e[33m"  # yellow
 	local p="\e[35m"  # purple
+
 	echo -e "Usage: $bb$base_name$c$b COMMAND [ OPTION | FLAG ]*$c"
 	echo  # instead of using "\n", as it makes this fn easier to update, too
     echo -e "$bb$base_name$c$b help$c"
 	echo -e "       You've just used this command to get this help message :)"
     echo
 	echo -e "$bb$base_name$c$b [ run | test ] [ FLAG ]?$c"
-	echo -e "       I'll cd to $bb$cor_home$c and run the"\
+	echo -e "       I'll move to $bb$cor_home$c and run the"\
         "( testbed | DUT testbench )"
 	echo -e "    $b [ run | test ] [ -d | --display-inline ]$c"
 	echo -e "       Will output logs to stdout and log dir: $bb$log_dir$c"
@@ -48,6 +51,10 @@ function print_help {
     echo -e "\n     e.g.$g cory run$c  <- will run the testbed"\
         "and write to logs only"
     echo -e "     Note: logs consist of both stdout and stderr from the command"
+    echo
+	echo -e "$bb$base_name$c$b interact$c"
+	echo -e "       I'll move to $bb$cor_home$c and opens the$p scapy$c"\
+        "interactive terminal for you"
     echo
 	echo -e "${bb}[source | .] $base_name$c$b cd [ home | logs ]?$c"
 	echo -e "       Moves you to a particular directory of importance."
@@ -76,14 +83,26 @@ function print_help {
         "$y <- default$c"
 	echo -e "       watches address details of DEVNAME device (${p}-f/-n 0.6$c)"
     echo
+	echo -e "$bb$base_name$c$b get VARNAME$c"
+	echo -e "       output just the value of certain useful variables"
+    echo -e "       the available variables are:"\
+        "${p}home logdir latestlog datetime$c"
+    echo -e "       useful for command chaining, e.g.$g cory g ll | cory s$c"
+    echo
 	echo -e "$bb$base_name$c$b summarise LOGFILE$c"
 	echo -e "       summarise an existing LOGFILE, same as stdout with"\
         "${g}cory logs short$c,"
     echo -e "       except that this also removes those CORYSUMMARY tags :)"
     echo
+	echo -e "$bb$base_name$c$b tips$c"
+	echo -e "       just a page with various tips on how to use cory"
+	echo -e "       and how to use the talc testbed (md formatted)"
+    echo  # leave encouragement option undocumented ;)
 	echo -e "$bb$base_name$c$b [ v | -v | -V | --version ]$c"
 	echo -e "       to support this common existence check"
-    echo
+    echo  # my shorthands take inspiration from iproute2's ip utility
+    echo "P.S. all of my commands have shorthands, to find out what they are,"
+    echo -e "please come read my source file at: $bb$myloc$c :)"
 }
 
 function print_tips {

@@ -18,7 +18,6 @@ RUN apt-get install -y verilator python3-venv iverilog
 WORKDIR /usr/local/bin
 COPY ./scripts/global .
 RUN chmod +x ./*
-RUN rm ./activenv.talc && mv ./activenv.corundum ./activenv
 
 # to update/add scripts, you can use the following command:
 # docker cp ./scripts/<filename> cortb:/usr/local/bin/

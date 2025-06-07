@@ -8,8 +8,8 @@ If they're not accessible to you, please check the [debugging section](#debuggin
 A little script ported over from my personal desktop that just activates python `venv`s.
 
 >![NOTE]
->The reason there are two, is just so that the default can be set differently between the corundum and talc containers\
-> They're manually handled within the build process, which isn't ideal, but I didn't want to add complexity to the activenv script
+>The find command for auto-detection of `venv/` directory only checks at depth level 2 from root (`/`)\
+>This shouldn't be a problem in any of my containers, because that's how they're set up, but should that underlying assumption change, you can update `-mindepth` or `-maxdepth`, accordingly.
 
 ## privesc
 

@@ -11,6 +11,12 @@ then
     exit 2
 fi
 
-venv_path=${1:-/corundum/venv}
+if [ -z $1 ]
+then
+    # because in all my containers, python venv/ has depth of 1 from root
+    venv_path=$(find / -mindepth 2 -maxdepth 2 -name venv)
+else
+    venv_path=$1
+fi
 
 source $venv_path/bin/activate

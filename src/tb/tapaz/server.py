@@ -36,19 +36,23 @@ class TAPServer:
         # nothing super interesting should happen until a packet is received.
         packet = self.tap.listen()
 
-        self.tb.log.info(f"TAPServer.serve_tap: Got a frame! - {packet!r}")
+        self.tb.log.info(
+            f"<CORYSUMMARY> TAPServer.serve_tap: Got a frame! - {packet!r}"
+        )
 
         # EthMacRx.send actually wraps raw bytes in EthMacFrame for us!
         # its constructor also safely transfers data from one EMF to another, so
         # I'm wrapping it just in case a cosmic ray makes it skips that line...
         frame = EthMacFrame(packet.build())
 
-        self.tb.log.info(f"TAPServer.serve_tap: repacked frame - {frame!r}")
+        self.tb.log.info(
+            f"<CORYSUMMARY> TAPServer.serve_tap: repacked frame - {frame!r}"
+        )
 
         # as we're currently locked to iface 0, this should be using port_mac 0
         await self.tb.port_mac[iface.index*iface.port_count].rx.send(frame)
 
-        self.tb.log.info(f"TAPServer.serve_tap: frame sent to DUT! - {frame}")
+        self.tb.log.info(f"TAPServer.serve_tap: frame sent to DUT!")
 
 
     async def serve_mac(self):
@@ -59,13 +63,17 @@ class TAPServer:
 
         frame = await self.tb.port_mac[iface.index*iface.port_count].tx.recv()
 
-        self.tb.log.info(f"TAPServer.serve_mac: Got a frame - {frame}")
+        self.tb.log.info(
+            f"<CORYSUMMARY> TAPServer.serve_mac: Got a frame - {frame}"
+        )
 
         # extract payload from their L2 frame, then wrap with a scapy L2 header
         eth_frame = Ether(frame.data)
         self.tap.send(eth_frame)
 
-        self.tb.log.info(f"TAPServer.serve_mac: Sent frame - {eth_frame!r}")
+        self.tb.log.info(
+            f"<CORYSUMMARY> TAPServer.serve_mac: Sent frame - {eth_frame!r}"
+        )
 
     async def _serve_tap(self):
         """wrapping serve_tap so it'll run 'til the test comes crumbling down"""

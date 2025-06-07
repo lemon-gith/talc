@@ -40,7 +40,7 @@ async def run_testbed(dut):
 
     # wait for all writes to complete
     await tb.driver.hw_regs.read_dword(0)
-    tb.log.info("Init complete")
+    tb.log.info("<CORYSUMMARY> Initialisation complete")
 
     # -------------------- Start interactive testbed --------------------
 
@@ -49,7 +49,7 @@ async def run_testbed(dut):
     _sam = SimpleServer(tb, app_id=1)
     _tabby = TAPServer(tb)
 
-    tb.log.info("Running Servers...")
+    tb.log.info("<CORYSUMMARY> Running Servers...")
     await Timer(Decimal(5), 'ns')
 
     # If you don't keep the main function busy, it'll shut down the testbench

@@ -135,7 +135,8 @@ class SimpleServer:
             return
 
         self.tb.log.info(
-            f"SimpleServer.serve._insidious_insider: inspecting - {payload}"
+            "<CORYSUMMARY> SimpleServer.serve._insidious_insider:"
+            + f"inspecting - {payload}"
         )
         if payload in wakewords:
             raise YouHaveBeenPoisoned(
@@ -155,13 +156,15 @@ class SimpleServer:
         # turn EthMacFrame.data (raw bytes) into scapy packet for ease-of-use
         packet = Ether(pkt.data)
 
-        self.tb.log.info(f"SimpleServer.serve: Handling packet - {packet!r}")
+        self.tb.log.info(
+            f"<CORYSUMMARY> SimpleServer.serve: Handling packet - {packet!r}"
+        )
 
         self._insidious_insider(packet)
         packet = self._handler(packet)
 
         self.tb.log.info(
-            f"SimpleServer.serve: App response - {packet!r}"
+            f"<CORYSUMMARY> SimpleServer.serve: App response - {packet!r}"
         )
 
         bytepacket = packet.build()

@@ -52,6 +52,7 @@ function print_help {
 	echo -e "${bb}[source | .] $base_name$c$b cd [ home | logs ]?$c"
 	echo -e "       Moves you to a particular directory of importance."
 	echo -e "       THIS COMMAND MUST BE SOURCED TO WORK!"
+    echo -e "       (also mistypes will now close your terminal :p)"
     echo -e "      $p home$c = $bfgb$cor_home$c $y <- default$c"
     echo -e "      $p logs$c = $bfgb$log_dir$c"
     echo
@@ -69,14 +70,16 @@ function print_help {
 	echo -e "       like watching paint dry, except, there is no paint..."
     echo
 	echo -e "$bb$base_name$c$b dev DEVNAME [ FLAG ]*$c"
-	echo -e "    $b dev [ -l | --link ]$c"
-	echo -e "       watches link details of DEVNAME device (${p}-f = 0.6$c)"
-	echo -e "    $b dev [ -a | --addr | --ip-address ]$c $y <- default$c"
-	echo -e "       watches address details of DEVNAME device (${p}-f = 0.6$c)"
+	echo -e "    $b dev DEVNAME [ -l | --link ]$c"
+	echo -e "       watches link details of DEVNAME device (${p}-f/-n 0.6$c)"
+	echo -e "    $b dev DEVNAME [ -a | --addr | --ip-address ]$c"\
+        "$y <- default$c"
+	echo -e "       watches address details of DEVNAME device (${p}-f/-n 0.6$c)"
     echo
 	echo -e "$bb$base_name$c$b summarise LOGFILE$c"
-	echo -e "       summarise an existing LOGFILE (same as stdout with"\
-        "${g}cory logs short$c)"
+	echo -e "       summarise an existing LOGFILE, same as stdout with"\
+        "${g}cory logs short$c,"
+    echo -e "       except that this also removes those CORYSUMMARY tags :)"
     echo
 	echo -e "$bb$base_name$c$b [ v | -v | -V | --version ]$c"
 	echo -e "       to support this common existence check"
@@ -185,6 +188,8 @@ case $1 in
                 do
                     if [ $opt_val == 0 ]
                     then
+                        # Note: I don't accept -n for either, as it might be
+                        # confusing to assign it to only one of watch/tail
                         case $opt in
                             -f | --frequency)
                                 opt_val=1

@@ -46,7 +46,7 @@ async def run_testbed(dut):
 
     tb.log.info("Instantiating Servers")
 
-    _sam = SimpleServer(tb)
+    _sam = SimpleServer(tb, app_id=1)
     _tabby = TAPServer(tb)
 
     tb.log.info("Running Servers...")

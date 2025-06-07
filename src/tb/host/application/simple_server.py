@@ -27,18 +27,18 @@ class SimpleServer:
         app_id: int = 0
             which app do you want the server to run:
 
-            0. ping
-            1. counter
-            2. echo
+            0. echo
+            1. ping
+            2. counter
         """
         # attach to the tesbench (for access to DUT)
         self.tb = tb
 
         # if you write more apps, add them here
         self.apps = [
+            self.echo,
             self.ping,
             self.counter,
-            self.echo,
         ]
 
         if app_id >= len(self.apps):
@@ -184,4 +184,4 @@ if __name__ == "__main__":
     from mock_utils import FakeTB
 
     # this no longer works with the cocotb-linked system :(
-    sara = SimpleServer(FakeTB(), app_id=1)
+    sara = SimpleServer(FakeTB(), app_id=2)

@@ -52,7 +52,7 @@ class TAPServer:
         # as we're currently locked to iface 0, this should be using port_mac 0
         await self.tb.port_mac[iface.index*iface.port_count].rx.send(frame)
 
-        self.tb.log.info(f"TAPServer.serve_tap: frame sent to DUT!")
+        self.tb.log.info("TAPServer.serve_tap: frame sent to DUT!")
 
 
     async def serve_mac(self):

@@ -46,7 +46,7 @@ class TB(object):
         self.rc.max_payload_size = 0x1  # 256 bytes
         self.rc.max_read_request_size = 0x2  # 512 bytes
 
-        # TODO: it would probably be good to be able to be able to swap this out
+        # this device can be swapped out, but remember to update configs, too
         self.dev = UltraScalePlusPcieDevice(
             # configuration options
             pcie_generation=3,

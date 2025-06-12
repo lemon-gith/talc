@@ -4,16 +4,13 @@
     "dockerfile": "../containers/talc.Dockerfile",
     "context": ".."
   },
+  // modify this to just initialise the submodule needed!
   "initializeCommand": "git submodule update --init --recursive",
   "runArgs": [
     /*
-      I've set up gpus for docker, and I highly recommend it:
-      having a GPU makes a big difference to simulation speed!
-
-      https://stackoverflow.com/q/25185405 <- if you have a GPU
-      if you can't, then you should comment this line out:
+      Codespaces can't use gpus
     */
-    "--gpus=all",
+    // "--gpus=all",
     // it needs networking capabilities for the TAP stuff
     "--cap-add=NET_RAW",
     "--cap-add=NET_ADMIN",

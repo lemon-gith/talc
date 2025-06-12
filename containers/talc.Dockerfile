@@ -39,7 +39,7 @@ COPY ./scripts/global .
 RUN chmod +x ./*
 
 # to update/add scripts, you can use the following command:
-# docker cp ./scripts/<filename> cortb:/usr/local/bin/
+# docker cp ./scripts/<filename> <cont_name>:/usr/local/bin/
 
 # make directory for TAP stuff
 RUN mkdir -p /talc/pyutils/netlib

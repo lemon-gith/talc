@@ -17,9 +17,6 @@
     // the tun device needs to be carried over into the containers
     "--device=/dev/net/tun:/dev/net/tun"
   ],
-  // mount testbed directory to save changes outside of container
-  "workspaceMount": "source=${localWorkspaceFolder}/src/tb/,target=/talc/tb/testbed/,type=bind",
-  "workspaceFolder": "/talc",
   "mounts": [
     {  // add vscode config files to container, for devcontainer
       "type": "bind",
@@ -42,6 +39,10 @@
       "target": "/talc/rtl/"
     }  // note: all other corundum files in container are NOT MOUNTED
   ],
+
+  // mount testbed directory to save changes outside of container
+  "workspaceMount": "source=${localWorkspaceFolder}/src/tb/,target=/talc/tb/testbed/,type=bind",
+  "workspaceFolder": "/talc",
 
   "customizations": {
     "vscode": {

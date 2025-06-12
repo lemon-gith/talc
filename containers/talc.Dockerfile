@@ -43,6 +43,12 @@ RUN chmod +x ./*
 
 # make directory for TAP stuff
 RUN mkdir -p /talc/pyutils/netlib
+
+# copy over files that would be mounted outside of codespace
+COPY ./src/utils/py /talc/pyutils
+COPY ./containers/configs/talc/.vscode /talc/.vscode
+# https://stackoverflow.com/a/13738951 <- for git sparse checkout
+
 # add the pyutils directory to PYTHONPATH, so its libraries are recognised
 RUN echo -e \
   "\nexport PYTHONPATH=\${PYTHONPATH:+\${PYTHONPATH}:}/talc/pyutils/" >> \

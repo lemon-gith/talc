@@ -11,7 +11,7 @@ then
 fi
 
 
-cor_home=${TBCORHOME:-/talc/tb/testbed}
+cor_home=${TBCORHOME:-/talc/tb/testbench}
 datetime=$(date +%Y%m%d_%H%M%S)
 
 # make log storage directory, out of the way of the user
@@ -43,12 +43,12 @@ function print_help {
     echo
 	echo -e "$bb$base_name$c$b [ run | test ] [ FLAG ]?$c"
 	echo -e "       I'll move to $bb$cor_home$c and run the"\
-        "( testbed | DUT testbench )"
+        "( testbench | DUT test suite )"
 	echo -e "    $b [ run | test ] [ -d | --display-inline ]$c"
 	echo -e "       Will output logs to stdout and log dir: $bb$log_dir$c"
 	echo -e "    $b [ run | test ] [ -l | --log ]$c $y <- default$c"
 	echo -e "       Only write logs to log dir: $bb$log_dir$c"
-    echo -e "\n     e.g.$g cory run$c  <- will run the testbed"\
+    echo -e "\n     e.g.$g cory run$c  <- will run the testbench"\
         "and write to logs only"
     echo -e "     Note: logs consist of both stdout and stderr from the command"
     echo
@@ -96,7 +96,7 @@ function print_help {
     echo
 	echo -e "$bb$base_name$c$b tips$c"
 	echo -e "       just a page with various tips on how to use cory"
-	echo -e "       and how to use the talc testbed (md formatted)"
+	echo -e "       and how to use the talc testbench (md formatted)"
     echo  # leave encouragement option undocumented ;)
 	echo -e "$bb$base_name$c$b [ v | -v | -V | --version ]$c"
 	echo -e "       to support this common existence check"
@@ -154,10 +154,10 @@ case $1 in
         inline_output=${2:--l}
         case $inline_output in
             -d | --display-inline)
-                MODULE=run_testbed make | tee $logfile_base-int.log 2>&1
+                MODULE=run_testbench make | tee $logfile_base-int.log 2>&1
                 ;;
             -l | --log)
-                MODULE=run_testbed make > $logfile_base-int.log 2>&1
+                MODULE=run_testbench make > $logfile_base-int.log 2>&1
                 ;;
             *)
                 unrecognised_command "run" $2

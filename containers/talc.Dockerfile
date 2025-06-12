@@ -31,7 +31,7 @@ RUN apt-get install -y iproute2 curl iputils-ping net-tools dnsutils tcpdump
 RUN apt-get install -y python3-dev python-is-python3 python3-pip gtkwave \
   git autoconf apt-utils bc bison flex build-essential cmake doxygen g++
 
-RUN apt-get install -y verilator python3-venv iverilog
+RUN apt-get install -y verilator python3-venv iverilog zip
 
 # add custom scripts to directory in PATH
 WORKDIR /usr/local/bin
@@ -39,7 +39,7 @@ COPY ./scripts/global .
 RUN chmod +x ./*
 
 # to update/add scripts, you can use the following command:
-# docker cp ./scripts/<filename> <cont_name>:/usr/local/bin/
+# docker cp ./scripts/global/<filename> <cont_name>:/usr/local/bin/
 
 # make directory for TAP stuff
 RUN mkdir -p /talc/pyutils/netlib
@@ -55,8 +55,9 @@ WORKDIR /talc
 # copy over corundum files
 COPY --from=build-image /coruncopy/ /talc/
 
-# set an env var for the main working directory
-ENV TBCORHOME=/talc/tb/testbed
+# make and set an env var for the main working directory
+# RUN mkdir -p /talc/tb/testbench
+ENV TBCORHOME=/talc/tb/testbench
 
 # make sure the requirements are ported over
 COPY ./containers/configs/requirements.txt /talc/
@@ -81,7 +82,7 @@ ENTRYPOINT [ "sleep", "infinity" ]
 
 # run from repo root:
 # docker build -t talc -f containers/talc.Dockerfile .
-# docker run -d --name tlc --gpus=all --cap-add=NET_RAW --cap-add=NET_ADMIN --device /dev/net/tun:/dev/net/tun --mount type=bind,src=./src/tb,dst=/talc/tb/testbed/ --mount type=bind,src=./src/tap/py/,dst=/talc/pyutils/tapaz/ talc
+# docker run -d --name tlc --gpus=all --cap-add=NET_RAW --cap-add=NET_ADMIN --device /dev/net/tun:/dev/net/tun --mount type=bind,src=./src/tb,dst=/talc/tb/testbench/ --mount type=bind,src=./src/tap/py,dst=/talc/pyutils talc
 # docker exec -it tlc bash
 
 # then you can run make to run the testbench with `make`

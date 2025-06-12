@@ -4,6 +4,7 @@
     "dockerfile": "../containers/talc.Dockerfile",
     "context": ".."
   },
+  "initializeCommand": "git submodule update --init --recursive",
   "runArgs": [
     /*
       I've set up gpus for docker, and I highly recommend it:

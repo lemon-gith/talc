@@ -575,27 +575,24 @@ async def all_interfaces_test(tb):
 
     pkts = [bytearray([(x+k) % 256 for x in range(1514)]) for k in range(count)]
 
-    tb.loopback_enable = True
+    with loopback_enabled(tb):
+        for k, p in enumerate(pkts):
+            await tb.driver.interfaces[k % len(tb.driver.interfaces)].start_xmit(p, 0)
 
-    for k, p in enumerate(pkts):
-        await tb.driver.interfaces[k % len(tb.driver.interfaces)].start_xmit(p, 0)
+        for k in range(count):
+            pkt = await tb.driver.interfaces[k % len(tb.driver.interfaces)].recv()
 
-    for k in range(count):
-        pkt = await tb.driver.interfaces[k % len(tb.driver.interfaces)].recv()
+            if pkt is None:
+                raise ValueError("Packet is None")
 
-        if pkt is None:
-            raise ValueError("Packet is None")
+            tb.log.info("Packet: %s", pkt)
 
-        tb.log.info("Packet: %s", pkt)
+            assert pkt.data == pkts[k]
 
-        assert pkt.data == pkts[k]
-
-        if tb.driver.interfaces[0].if_feature_rx_csum:
-            assert pkt.rx_checksum == ~scapy.utils.checksum(
-                bytes(pkt.data[14:])
-            ) & 0xffff
-
-    tb.loopback_enable = False
+            if tb.driver.interfaces[0].if_feature_rx_csum:
+                assert pkt.rx_checksum == ~scapy.utils.checksum(
+                    bytes(pkt.data[14:])
+                ) & 0xffff
 
 
 async def all_scheduler_blocks_test(tb: TB, interface: mqnic.Interface):
@@ -615,29 +612,26 @@ async def all_scheduler_blocks_test(tb: TB, interface: mqnic.Interface):
 
     pkts = [bytearray([(x+k) % 256 for x in range(1514)]) for k in range(count)]
 
-    tb.loopback_enable = True
+    with loopback_enabled(tb):
+        queues = set()
 
-    queues = set()
+        for k, p in enumerate(pkts):
+            await interface.start_xmit(p, k % len(interface.sched_blocks))
 
-    for k, p in enumerate(pkts):
-        await interface.start_xmit(p, k % len(interface.sched_blocks))
+        for k in range(count):
+            pkt = await interface.recv()
 
-    for k in range(count):
-        pkt = await interface.recv()
+            if pkt is None:
+                raise ValueError("Packet is None")
 
-        if pkt is None:
-            raise ValueError("Packet is None")
+            tb.log.info("Packet: %s", pkt)
+            # assert pkt.data == pkts[k]
+            if interface.if_feature_rx_csum:
+                assert pkt.rx_checksum == ~scapy.utils.checksum(bytes(pkt.data[14:])) & 0xffff
 
-        tb.log.info("Packet: %s", pkt)
-        # assert pkt.data == pkts[k]
-        if interface.if_feature_rx_csum:
-            assert pkt.rx_checksum == ~scapy.utils.checksum(bytes(pkt.data[14:])) & 0xffff
+            queues.add(pkt.queue)
 
-        queues.add(pkt.queue)
-
-    assert len(queues) == len(interface.sched_blocks)
-
-    tb.loopback_enable = False
+        assert len(queues) == len(interface.sched_blocks)
 
     for block in interface.sched_blocks[1:]:
         await block.schedulers[0].rb.write_dword(mqnic.MQNIC_RB_SCHED_RR_REG_CTRL, 0x00000000)

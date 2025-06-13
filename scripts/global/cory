@@ -68,14 +68,17 @@ function print_help {
     echo -e "       Performs an ACTION on the logs"
 	echo -e "    $b logs watch [ OPTION VAL ]*$c"
 	echo -e "       I'll help you watch the log outputs, as they are written"
-	echo -e "    $b logs watch full"\
-        "[ [ -f | --frequency ] VAL | [-l | --length ] VAL ]*$c $y <- default$c"
+	echo -e "    $b logs watch full$c"
 	echo -e "       The full log output, everything being written, unabridged"
-    echo -e "      $p -f (VAL: float = 0.1)$c sets frequency of watch updates"\
-        "(in seconds)"
-    echo -e "      $p -l (VAL: int = 5)$c sets length of tail output (in lines)"
 	echo -e "    $b logs watch short$c"
 	echo -e "       Abridged output, displaying only server-summary lines"
+	echo -e "    $b logs watch tail"\
+        "[ [ -p | --period ] VAL | [-l | --length ] VAL ]*$c $y <- default$c"
+	echo -e "       displays the last {length} lines of the unabridged logs," \
+        "updating the display every {period} seconds"
+    echo -e "      $p -p (VAL: float = 0.1)$c sets period between" \
+        "watch updates (in seconds)"
+    echo -e "      $p -l (VAL: int = 5)$c sets length of tail output (in lines)"
 	echo -e "    $b logs watch empty$c"
 	echo -e "       like watching paint dry, except, there is no paint..."
 	echo
@@ -255,6 +258,14 @@ case $1 in
 
                 case $log_type in
                     f | full)
+                        tail -f $latest_log
+                        ;;
+                    s | short | summary | servers)
+                        # I don't rm the tag here, so there's less processing,
+                        # as this is realtime
+                        tail -f $latest_log | grep --colour=never "<CORYSUMMARY>"
+                        ;;
+                    t | tail)
                         vals=(0.1 5)  # default values for command
                         opt_val=0
                         for opt in ${@:3}
@@ -265,14 +276,15 @@ case $1 in
                                 # as it might be confusing to assign it
                                 # to only one of watch/tail
                                 case $opt in
-                                    -f | --frequency)
+                                    -p | --period)
                                         opt_val=1
                                         ;;
                                     -l | --length)
                                         opt_val=2
                                         ;;
                                     *)
-                                        unrecognised_command "watch" "full" $opt
+                                        unrecognised_command "logs" "watch" \
+                                            "tail" $opt
                                         ;;
                                 esac
                             else
@@ -281,18 +293,14 @@ case $1 in
                         done
                         watch -n ${vals[0]} tail -n ${vals[1]} $latest_log
                         ;;
-                    s | short | summary | servers)
-                        # I don't rm the tag here, so less processing,
-                        # as this is realtime
-                        tail -f $latest_log | grep --colour=never "<CORYSUMMARY>"
-                        ;;
                     e | empty)
-                        echo "I have no idea why you would select this option..."
+                        echo "I have no idea why you would" \
+                            "select this option..."
                         echo "Welcome to /dev/null/:"
                         tail -f /dev/null
                         ;;
                     *)
-                        unrecognised_command "watch" $2
+                        unrecognised_command "logs" "watch" $2
                         ;;
                 esac
                 ;;

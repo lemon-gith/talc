@@ -74,8 +74,8 @@ function print_help {
 	echo -e "       Abridged output, displaying only server-summary lines"
 	echo -e "    $b logs watch tail"\
         "[ [ -p | --period ] VAL | [-l | --length ] VAL ]*$c $y <- default$c"
-	echo -e "       displays the last {length} lines of the unabridged logs," \
-        "updating the display every {period} seconds"
+	echo -e "       displays the last {length} lines of the unabridged logs,"
+    echo -e "       updating the display every {period} seconds"
     echo -e "      $p -p (VAL: float = 0.1)$c sets period between" \
         "watch updates (in seconds)"
     echo -e "      $p -l (VAL: int = 5)$c sets length of tail output (in lines)"
@@ -89,8 +89,8 @@ function print_help {
 	echo -e "       I will zip all of logs,"\
         "and place the zip file in a DIR of your choosing"
     echo -e "    $b logs export$c"
-	echo -e "       Unfortunately I cannot export your logs,"\
-        "but I can try to give you a template to do that with?"
+	echo -e "       Unfortunately I cannot export your logs,"
+    echo -e "       but I can try to give you a template to do that with?"
     echo -e "    $b logs clear$c"
 	echo -e "       I will delete all of your existing logs!"
 	echo -e "       WARNING: this is a destructive action!"

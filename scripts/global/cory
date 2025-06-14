@@ -205,7 +205,7 @@ case $1 in
                 MODULE=run_testbench make > $logfile_base-int.log 2>&1
                 ;;
             *)
-                unrecognised_command "run" $2
+                unrecognised_command "run" $inline_output
                 ;;
         esac
         ;;
@@ -221,7 +221,7 @@ case $1 in
                 MODULE=test_corundum make > $logfile_base-test.log 2>&1
                 ;;
             *)
-                unrecognised_command "test" $2
+                unrecognised_command "test" $inline_output
                 ;;
         esac
         ;;
@@ -300,7 +300,7 @@ case $1 in
                         tail -f /dev/null
                         ;;
                     *)
-                        unrecognised_command "logs" "watch" $2
+                        unrecognised_command "logs" "watch" $log_type
                         ;;
                 esac
                 ;;
@@ -356,7 +356,7 @@ case $1 in
                 watch -n 0.6 ip addr show $devname
                 ;;
             *)
-                unrecognised_command "dev" $devname $2
+                unrecognised_command "watch" $devname ${@:3}
                 ;;
         esac
         ;;

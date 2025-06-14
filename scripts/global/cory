@@ -44,9 +44,9 @@ function print_help {
 	echo -e "$bb$base_name$c$b [ run | test ] [ FLAG ]?$c"
 	echo -e "       I'll move to $bb$cor_home$c and run the"\
         "( testbench | DUT test suite )"
-	echo -e "    $b [ run | test ] [ -d | --display-inline ]$c"
+	echo -e "    $b [ run | test ] [ -d | --display-inline ]$c $y <- default$c"
 	echo -e "       Will output logs to stdout and log dir: $bb$log_dir$c"
-	echo -e "    $b [ run | test ] [ -l | --log ]$c $y <- default$c"
+	echo -e "    $b [ run | test ] [ -h | --hide-output ]$c"
 	echo -e "       Only write logs to log dir: $bb$log_dir$c"
     echo -e "\n     e.g.$g cory run$c  <- will run the testbench"\
         "and write to logs only"
@@ -196,13 +196,13 @@ case $1 in
     r | run)
         cd $cor_home
 
-        inline_output=${2:--l}
+        inline_output=${2:--d}
         case $inline_output in
+            h | -h | --hide-output)
+                MODULE=run_testbench make > $logfile_base-int.log 2>&1
+                ;;
             -d | --display-inline)
                 MODULE=run_testbench make | tee $logfile_base-int.log 2>&1
-                ;;
-            -l | --log)
-                MODULE=run_testbench make > $logfile_base-int.log 2>&1
                 ;;
             *)
                 unrecognised_command "run" $inline_output
@@ -212,13 +212,13 @@ case $1 in
     t | test)
         cd $cor_home
 
-        inline_output=${2:--l}
+        inline_output=${2:--d}
         case $inline_output in
+            h | -h | --hide-output)
+                MODULE=test_corundum make > $logfile_base-test.log 2>&1
+                ;;
             -d | --display-inline)
                 MODULE=test_corundum make | tee $logfile_base-test.log 2>&1
-                ;;
-            l | -l | --log)
-                MODULE=test_corundum make > $logfile_base-test.log 2>&1
                 ;;
             *)
                 unrecognised_command "test" $inline_output

@@ -14,7 +14,7 @@ WORKDIR /coruncopy
 
 # copy, resolving all symlinks, except the example ones, cos those are cyclic...
 RUN rsync -r -L -K --exclude '*/example/**/lib' \
-  /corundum/fpga/app/template/ /coruncopy/
+  /corundum/fpga/app/talc/ /coruncopy/
 
 # Grab a fresh copy of the image to build the final container with
 FROM ubuntu:24.04

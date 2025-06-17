@@ -121,7 +121,7 @@ function print_help {
         "${g}cory logs short$c,"
     echo -e "       except that this also removes those CORYSUMMARY tags :)"
     echo
-	echo -e "$bb$base_name$c$b tips$c"
+	echo -e "$bb$base_name$c$b advice$c"
 	echo -e "       just a page with various tips on how to use cory"
 	echo -e "       and how to use the talc testbench (md formatted)"
     echo  # leave encouragement option undocumented ;)
@@ -140,14 +140,16 @@ function print_tips {
 	local g="\e[32m"  # green
 	local y="\e[33m"  # yellow
 	local p="\e[35m"  # purple
-    echo "# Cory's tips"
+    echo -e "# Cory's tips"
     echo
-    echo "## Cory Tips"
-    echo "- You must run$g cory logs [ f | s ]$c after$g cory run$c,"
-    echo "  otherwise cory will track the wrong log file :}"
+    echo -e "## Cory Tips"
+    echo -e "- You must run$g cory log wat [ f | s | t ]$c after$g cory run$c,"
+    echo -e "  otherwise cory will track the wrong log file :}"
     echo
-    echo "## Talc Tips"
-    echo "None yet, sorry :("
+    echo -e "## Talc Tips"
+    echo -e "- Remember to wait for the TAP device to be created before testing"
+    echo -e "  (recall you can use$g cory watch DEVNAME$c to watch" \
+        "its existence)"
     echo
 }
 
@@ -402,7 +404,7 @@ case $1 in
         # use sed to remove the tag, cos it's cleaner like that :)
         grep "<CORYSUMMARY>" $file | sed "s/<CORYSUMMARY> //"
         ;;
-    t | tips)
+    a | advise | advice)
         print_tips
         ;;
     v | -v | -V | --version)

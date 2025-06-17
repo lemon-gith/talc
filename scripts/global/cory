@@ -11,7 +11,7 @@ then
 fi
 
 
-cor_home=${TBCORHOME:-/talc/tb/testbed}
+cor_home=${TBCORHOME:-/talc/tb/testbench}
 datetime=$(date +%Y%m%d_%H%M%S)
 
 # make log storage directory, out of the way of the user
@@ -43,12 +43,12 @@ function print_help {
     echo
 	echo -e "$bb$base_name$c$b [ run | test ] [ FLAG ]?$c"
 	echo -e "       I'll move to $bb$cor_home$c and run the"\
-        "( testbed | DUT testbench )"
-	echo -e "    $b [ run | test ] [ -d | --display-inline ]$c"
+        "( testbench | DUT test suite )"
+	echo -e "    $b [ run | test ] [ -d | --display-inline ]$c $y <- default$c"
 	echo -e "       Will output logs to stdout and log dir: $bb$log_dir$c"
-	echo -e "    $b [ run | test ] [ -l | --log ]$c $y <- default$c"
+	echo -e "    $b [ run | test ] [ -h | --hide-output ]$c"
 	echo -e "       Only write logs to log dir: $bb$log_dir$c"
-    echo -e "\n     e.g.$g cory run$c  <- will run the testbed"\
+    echo -e "\n     e.g.$g cory run$c  <- will run the testbench"\
         "and write to logs only"
     echo -e "     Note: logs consist of both stdout and stderr from the command"
     echo
@@ -63,23 +63,46 @@ function print_help {
     echo -e "      $p home$c = $bfgb$cor_home$c $y <- default$c"
     echo -e "      $p logs$c = $bfgb$log_dir$c"
     echo
-	echo -e "$bb$base_name$c$b logs TYPE [ OPTION VAL ]*$c"
+	echo -e "$bb$base_name$c$b logs ACTION" \
+        "[ [ OPTION VAL ]* | [ OPTION* | DIR? ] ]$c"
+    echo -e "       Performs an ACTION on the logs"
+	echo -e "    $b logs watch [ OPTION VAL ]*$c"
 	echo -e "       I'll help you watch the log outputs, as they are written"
-	echo -e "    $b logs full"\
-        "[ [ -f | --frequency ] VAL | [-l | --length ] VAL ]*$c $y <- default$c"
+	echo -e "    $b logs watch full$c"
 	echo -e "       The full log output, everything being written, unabridged"
-    echo -e "      $p -f (VAL: float = 0.1)$c sets frequency of watch updates"\
-        "(in seconds)"
-    echo -e "      $p -l (VAL: int = 5)$c sets length of tail output (in lines)"
-	echo -e "    $b logs short$c"
+	echo -e "    $b logs watch short$c"
 	echo -e "       Abridged output, displaying only server-summary lines"
-	echo -e "    $b logs empty$c"
+	echo -e "    $b logs watch tail"\
+        "[ [ -p | --period ] VAL | [-l | --length ] VAL ]*$c $y <- default$c"
+	echo -e "       displays the last {length} lines of the unabridged logs,"
+    echo -e "       updating the display every {period} seconds"
+    echo -e "      $p -p (VAL: float = 0.1)$c sets period between" \
+        "watch updates (in seconds)"
+    echo -e "      $p -l (VAL: int = 5)$c sets length of tail output (in lines)"
+	echo -e "    $b logs watch empty$c"
 	echo -e "       like watching paint dry, except, there is no paint..."
+	echo
+    echo -e "    $b logs list [ OPTION* ]$c"
+	echo -e "       lists all of your saved logs,"
+    echo -e "       and you can pass OPTIONs to the$g ls$c command that is run"
+    echo -e "    $b logs zip DIR$c"
+	echo -e "       I will zip all of logs,"\
+        "and place the zip file in a DIR of your choosing"
+    echo -e "    $b logs export$c"
+	echo -e "       Unfortunately I cannot export your logs,"
+    echo -e "       but I can try to give you a template to do that with?"
+    echo -e "    $b logs clear$c"
+	echo -e "       I will delete all of your existing logs!"
+	echo -e "       WARNING: this is a destructive action!"
     echo
-	echo -e "$bb$base_name$c$b dev DEVNAME [ FLAG ]*$c"
-	echo -e "    $b dev DEVNAME [ -l | --link ]$c"
+	echo -e "$bb$base_name$c$b dump [ IFACE ]$c"
+	echo -e "       dumps all network traffic flowing through IFACE" \
+        "(default to tap0)"
+    echo
+	echo -e "$bb$base_name$c$b watch DEVNAME [ FLAG ]*$c"
+	echo -e "    $b watch DEVNAME [ -l | --link ]$c"
 	echo -e "       watches link details of DEVNAME device (${p}-f/-n 0.6$c)"
-	echo -e "    $b dev DEVNAME [ -a | --addr | --ip-address ]$c"\
+	echo -e "    $b watch DEVNAME [ -a | --addr | --ip-address ]$c"\
         "$y <- default$c"
 	echo -e "       watches address details of DEVNAME device (${p}-f/-n 0.6$c)"
     echo
@@ -89,14 +112,18 @@ function print_help {
         "${p}home logdir latestlog datetime$c"
     echo -e "       useful for command chaining, e.g.$g cory g ll | cory s$c"
     echo
+	echo -e "$bb$base_name$c$b kill$c"
+	echo -e "       indubitably kills all running testbench process"
+	echo -e "       WARNING: this is a destructive action!"
+    echo
 	echo -e "$bb$base_name$c$b summarise LOGFILE$c"
 	echo -e "       summarise an existing LOGFILE, same as stdout with"\
         "${g}cory logs short$c,"
     echo -e "       except that this also removes those CORYSUMMARY tags :)"
     echo
-	echo -e "$bb$base_name$c$b tips$c"
+	echo -e "$bb$base_name$c$b advice$c"
 	echo -e "       just a page with various tips on how to use cory"
-	echo -e "       and how to use the talc testbed (md formatted)"
+	echo -e "       and how to use the talc testbench (md formatted)"
     echo  # leave encouragement option undocumented ;)
 	echo -e "$bb$base_name$c$b [ v | -v | -V | --version ]$c"
 	echo -e "       to support this common existence check"
@@ -113,14 +140,16 @@ function print_tips {
 	local g="\e[32m"  # green
 	local y="\e[33m"  # yellow
 	local p="\e[35m"  # purple
-    echo "# Cory's tips"
+    echo -e "# Cory's tips"
     echo
-    echo "## Cory Tips"
-    echo "- You must run$g cory logs [ f | s ]$c after$g cory run$c,"
-    echo "  otherwise cory will track the wrong log file :}"
+    echo -e "## Cory Tips"
+    echo -e "- You must run$g cory log wat [ f | s | t ]$c after$g cory run$c,"
+    echo -e "  otherwise cory will track the wrong log file :}"
     echo
-    echo "## Talc Tips"
-    echo "None yet, sorry :("
+    echo -e "## Talc Tips"
+    echo -e "- Remember to wait for the TAP device to be created before testing"
+    echo -e "  (recall you can use$g cory watch DEVNAME$c to watch" \
+        "its existence)"
     echo
 }
 
@@ -142,6 +171,24 @@ unrecognised_command() {
     exit 2
 }
 
+are_you_sure() {
+    read -p "Are you sure? (yes/no) " yesno
+    case $yesno in
+        [Yy]* )
+            echo "Very well, $@"
+            ;;
+        [Nn]* )
+            echo "Absolutely no worries, please come back when you are sure :)"
+            exit 0
+            ;;
+        * )
+            echo "I'm not quite sure what to make of that..."
+            echo "    Please answer with either yes or no."
+            are_you_sure $@
+            ;;
+    esac
+}
+
 case $1 in
     h | -h | help | --help)
         print_help
@@ -151,32 +198,32 @@ case $1 in
     r | run)
         cd $cor_home
 
-        inline_output=${2:--l}
+        inline_output=${2:--d}
         case $inline_output in
-            -d | --display-inline)
-                MODULE=run_testbed make | tee $logfile_base-int.log 2>&1
+            h | -h | --hide-output)
+                MODULE=run_testbench make > $logfile_base-int.log 2>&1
                 ;;
-            -l | --log)
-                MODULE=run_testbed make > $logfile_base-int.log 2>&1
+            -d | --display-inline)
+                MODULE=run_testbench make | tee $logfile_base-int.log 2>&1
                 ;;
             *)
-                unrecognised_command "run" $2
+                unrecognised_command "run" $inline_output
                 ;;
         esac
         ;;
     t | test)
         cd $cor_home
 
-        inline_output=${2:--l}
+        inline_output=${2:--d}
         case $inline_output in
+            h | -h | --hide-output)
+                MODULE=test_corundum make > $logfile_base-test.log 2>&1
+                ;;
             -d | --display-inline)
                 MODULE=test_corundum make | tee $logfile_base-test.log 2>&1
                 ;;
-            l | -l | --log)
-                MODULE=test_corundum make > $logfile_base-test.log 2>&1
-                ;;
             *)
-                unrecognised_command "test" $2
+                unrecognised_command "test" $inline_output
                 ;;
         esac
         ;;
@@ -184,7 +231,7 @@ case $1 in
         cd $cor_home
         python -m scapy
         ;;
-    c | cd | travel)
+    c | cd | travel | teleport)
         check_sourced
         dest=${2:-wherever}
         case $dest in
@@ -205,55 +252,95 @@ case $1 in
         esac
         ;;
     l | log | logs)
-        log_type=${2:-full}
+        log_action=${2:-ls}
 
-        case $log_type in
-            f | full)
-                vals=(0.1 5)  # default values for command
-                opt_val=0
-                for opt in ${@:3}
-                do
-                    if [ $opt_val == 0 ]
-                    then
-                        # Note: I don't accept -n for either, as it might be
-                        # confusing to assign it to only one of watch/tail
-                        case $opt in
-                            -f | --frequency)
-                                opt_val=1
-                                ;;
-                            -l | --length)
-                                opt_val=2
-                                ;;
-                            *)
-                                unrecognised_command "watch" "full" $opt
-                                ;;
-                        esac
-                    else
-                        vals[$opt_val]=$opt
-                    fi
-                done
-                watch -n ${vals[0]} tail -n ${vals[1]} $latest_log
+        case $log_action in
+            w | wat | watch)
+                log_type=${3:-full}
+
+                case $log_type in
+                    f | full)
+                        tail -f $latest_log
+                        ;;
+                    s | short | summary | servers)
+                        # I don't rm the tag here, so there's less processing,
+                        # as this is realtime
+                        tail -f $latest_log | grep --colour=never "<CORYSUMMARY>"
+                        ;;
+                    t | tail)
+                        vals=(0.1 5)  # default values for command
+                        opt_val=0
+                        for opt in ${@:3}
+                        do
+                            if [ $opt_val == 0 ]
+                            then
+                                # Note: I don't accept -n for either,
+                                # as it might be confusing to assign it
+                                # to only one of watch/tail
+                                case $opt in
+                                    -p | --period)
+                                        opt_val=1
+                                        ;;
+                                    -l | --length)
+                                        opt_val=2
+                                        ;;
+                                    *)
+                                        unrecognised_command "logs" "watch" \
+                                            "tail" $opt
+                                        ;;
+                                esac
+                            else
+                                vals[$opt_val]=$opt
+                            fi
+                        done
+                        watch -n ${vals[0]} tail -n ${vals[1]} $latest_log
+                        ;;
+                    e | empty)
+                        echo "I have no idea why you would" \
+                            "select this option..."
+                        echo "Welcome to /dev/null/:"
+                        tail -f /dev/null
+                        ;;
+                    *)
+                        unrecognised_command "logs" "watch" $log_type
+                        ;;
+                esac
                 ;;
-            s | short | summary | servers)
-                # I don't rm the tag here, less processing, as this is realtime
-                tail -f $latest_log | grep --colour=never "<CORYSUMMARY>"
+            l | ls | list)
+                ls -t  ${@:3} $log_dir
                 ;;
-            e | empty)
-                echo "I have no idea why you would select this option..."
-                echo "Welcome to /dev/null/:"
-                tail -f /dev/null
+            z | zip)
+                ziploc=${3:-$cor_home}
+                zip -r $ziploc/cocologs $log_dir/*
+                echo "logs zipped to $ziploc/cocologs.zip, in order to" \
+                    "export these, run this from outside the container:"
+                echo -e "\n    docker cp <cont_name>:$ziploc/cocologs.zip" \
+                    "<dest_dir>\n"
+                ;;
+            e | exp | export)
+                echo "Unfortunately that's not a command I can run for you"
+                echo "You need to run this command from outside the container:"
+                echo -e "\n    docker cp <cont_name>:$log_dir <dest_dir>\n"
+                ;;
+            clear)
+                are_you_sure "clearing all log files"
+                rm $log_dir/*
                 ;;
             *)
-            unrecognised_command "watch" $2
-            ;;
+                unrecognised_command "logs" $log_action
+                ;;
         esac
         ;;
-    d | dev | device)
+    d | dump)
+        iface=${2:-tap0}
+        tcpdump -i $iface -X -v
+        ;;
+    w | wat | watch)
         devname=${2:-tap0}
         if [[ $devname == -* ]]
         then
             echo "Sorry, to me '$devname' looks like a flag not a device name"
-            echo "    The correct syntax for this is 'dev [ DEVNAME [ FLAG ] ]'"
+            echo "    The correct syntax is 'watch [ DEVNAME [ FLAG ] ]'"
             exit 2
         fi
 
@@ -271,7 +358,7 @@ case $1 in
                 watch -n 0.6 ip addr show $devname
                 ;;
             *)
-                unrecognised_command "dev" $devname $2
+                unrecognised_command "watch" $devname ${@:3}
                 ;;
         esac
         ;;
@@ -305,17 +392,24 @@ case $1 in
                 ;;
         esac
         ;;
+    kill)
+        echo "These are the processes that I will kill:"
+        ps -e | grep -E "make|vvp"
+        are_you_sure "killing processes..."
+        kill -9 $(ps -e | grep -E "make|vvp" | awk '{print $1}' | tr '\n' ' ')
+        # sends SIGKILL signals to all make and vvp processes in the container
+        ;;
     s | summ | summarise)
         file=${2:-$latest_log}
         # use sed to remove the tag, cos it's cleaner like that :)
         grep "<CORYSUMMARY>" $file | sed "s/<CORYSUMMARY> //"
         ;;
-    t | tips)
+    a | advise | advice)
         print_tips
         ;;
     v | -v | -V | --version)
         # just to support this, as if I were a real CLI utility... alas
-        echo "Hi, I'm cory, version 0.7.0 (this number was arbitrarily chosen)"
+        echo "Hi, I'm cory, version 0.8.0 (this number was arbitrarily chosen)"
         exit 0
         ;;
     e | encourage | encouragement)

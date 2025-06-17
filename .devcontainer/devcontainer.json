@@ -31,12 +31,12 @@
     {  // add my python utility libraries
     "type": "bind",
     "source": "${localWorkspaceFolder}/src/utils/py",
-    "target": "/talc/pyutils/"
+    "target": "/talc/pyutils"
     },
     {  // mount rtl directory to save changes outside of container
       "type": "bind",
-      "source": "${localWorkspaceFolder}/nics/corundum/fpga/app/svird/rtl/",
-      "target": "/talc/rtl/"
+      "source": "${localWorkspaceFolder}/nics/corundum/fpga/app/talc/rtl",
+      "target": "/talc/rtl"
     }  // note: all other corundum files in container are NOT MOUNTED
   ],
 

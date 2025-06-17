@@ -6,7 +6,6 @@ from __future__ import annotations
 from typing import List
 from cocotbext.pcie.core.pci import PciDevice
 from cocotbext.axi.address_space import Pool
-# TODO: which imports do I need?
 
 # module imports
 import datetime
@@ -1462,23 +1461,23 @@ class Interface:
         await self.ports[0].set_rx_ctrl(0)
 
         for q in self.txq:
-            q.disable()
+            await q.disable()
 
         for q in self.rxq:
-            q.disable()
+            await q.disable()
 
         # wait for all writes to complete
         await self.hw_regs.read_dword(0)
 
         for q in self.txq:
             cq = q.cq
-            await q.free_buf()
+            q.free_buf()
             await q.close()
             await cq.close()
 
         for q in self.rxq:
             cq = q.cq
-            await q.free_buf()
+            q.free_buf()
             await q.close()
             await cq.close()
 
@@ -1488,7 +1487,7 @@ class Interface:
         await self.ports[0].set_tx_ctrl(0)
 
     async def start_xmit(
-        self, skb, tx_ring=None, csum_start=None, csum_offset=None
+        self, skb, tx_ring: int | None = None, csum_start=None, csum_offset=None
     ):
         """Start Transmission
 
@@ -1498,7 +1497,7 @@ class Interface:
             Socket Buffer, basically just the bytes that make up the packet here
 
         tx_ring: int | None
-            idk
+            which transmission ring do you want to send the packet from?
 
         csum_start: int | None
             idk, where the checksum starts?
@@ -1509,9 +1508,8 @@ class Interface:
         Raises
         ------
         AssertionError
-            If you so much as sneeze:
             - if skb is longer than max_tx_mtu
-            - if there's existing tx_info for the ring index you've been assigned...
+            - if there's existing tx_info for the ring index you've assigned
         """
         # first ensures that the iface's port is up and running
         if not self.port_up:
@@ -1564,7 +1562,12 @@ class Interface:
             csum_cmd = 0x8000 | (csum_offset << 8) | csum_start
 
         length = len(data)
-        ptr = pkt.get_absolute_address(0)+10
+        packet_addr = pkt.get_absolute_address(0)
+
+        if packet_addr is None:
+            raise ValueError("err (start_xmit): cannot find packet address")
+
+        ptr = packet_addr + 10
         offset = 0
 
         # write descriptors
@@ -1658,7 +1661,10 @@ class Driver:
         self.log = SimLog("cocotb.mqnic")
 
         self.dev = None
-        self.pool = None
+        
+        # This class was designed to have one of the other initialisers
+        # called before it gets used, if that happens this can be ignored
+        self.pool: Pool = None  # type: ignore
 
         self.hw_regs = None
         self.app_hw_regs = None

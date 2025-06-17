@@ -7,7 +7,7 @@ TOPLEVEL_LANG = verilog
 
 SIM ?= icarus
 WAVES ?= 0
-MODULE ?= run_testbed
+MODULE ?= run_testbench
 
 COCOTB_HDL_TIMEUNIT = 1ns
 COCOTB_HDL_TIMEPRECISION = 1ps

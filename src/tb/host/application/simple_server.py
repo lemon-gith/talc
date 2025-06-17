@@ -7,7 +7,6 @@ from cocotbext.eth import EthMacFrame
 from scapy.layers.inet import IP, UDP, TCP
 from scapy.layers.l2 import Ether
 from scapy.packet import Packet
-from scapy.utils import checksum
 
 from netlib.iproute import IPRoute
 
@@ -74,24 +73,24 @@ class SimpleServer:
     def ping(self, packet: Packet):
         """just readjusts source and destination values, then returns"""
         self.tb.log.info("SimpleServer.serve.ping: tweaking addresses")
-        if Ether in packet:
-            packet[Ether].dst = packet[Ether].src
-            packet[Ether].src = self.eth_addr
-        if IP in packet:
-            packet[IP].dst = packet[IP].src
-            packet[IP].src = self.ip_addr
-            del packet[IP].chksum  # make scapy recalculate checksum
-        if UDP in packet:
-            packet[UDP].sport, packet[UDP].dport = (
-                packet[UDP].dport, packet[UDP].sport
-            )
-            del packet[UDP].chksum  # make scapy recalculate checksum
         # adding this for completeness for now
         if TCP in packet:
             packet[TCP].sport, packet[TCP].dport = (
                 packet[TCP].dport, packet[TCP].sport
             )
             del packet[TCP].chksum  # is this right?
+        if UDP in packet:
+            packet[UDP].sport, packet[UDP].dport = (
+                packet[UDP].dport, packet[UDP].sport
+            )
+            del packet[UDP].chksum  # make scapy recalculate checksum
+        if IP in packet:
+            packet[IP].dst = packet[IP].src
+            packet[IP].src = self.ip_addr
+            del packet[IP].chksum  # make scapy recalculate checksum
+        if Ether in packet:
+            packet[Ether].dst = packet[Ether].src
+            packet[Ether].src = self.eth_addr
 
         return packet
 
@@ -181,7 +180,10 @@ class SimpleServer:
         )
 
     async def _serve(self):
-        """wrapping serve because I think the code looks neater this way?"""
+        """wrapping serve so it never stops serving,
+        this also serves the purpose of making it obvious where the
+        cocotb hooks into the system are
+        """
         while True:
             await self.serve()
             await Timer(Decimal(2), 'us')

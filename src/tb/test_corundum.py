@@ -48,7 +48,8 @@ def loopback_enabled(tb: TB, enabled: bool = True):
     tb: TB
         the testbench instance for which you want loopback temporarily enabled
     enabled: bool
-        should this be enabled? useful for parameterised testing
+        should loopback be enabled?
+        this option is useful for parameterised testing
 
     Returns
     -------
@@ -57,8 +58,10 @@ def loopback_enabled(tb: TB, enabled: bool = True):
 
     Usage
     -----
+    ```
     with loopback_enabled(tb):
         ...
+    ```
     """
     tb.loopback_enable = enabled
 
@@ -166,10 +169,10 @@ async def simple_packet_firehose(
     ```python
     for i in range(fred):
         send()
-        # other logic 
-    
+        # other logic
+
     # other logic
-    
+
     for i in range(fred):
         recv()
         assert
@@ -430,7 +433,14 @@ async def dma_bench_test(tb: TB):
 
 async def single_packet_test(tb: TB, interface: mqnic.Interface):
     """
-    TODO: write this up
+    This test verifies that the DUT correctly delivers packets, 
+    from one end to another; if the feature is enabled,
+    it also verifies the EthMacFrame checksum integrity
+    
+    This test sends a single 'packet' of arbitrary data from the host,
+    through the DUT, manually captures the packet at the MAC port,
+    resends it back up through the same MAC port,
+    and catches it back at the host
     """
     data = bytearray([x % 256 for x in range(1024)])
 
@@ -454,7 +464,14 @@ async def single_packet_test(tb: TB, interface: mqnic.Interface):
 
 async def basic_checksum_test(tb: TB):
     """
-    TODO: nyom
+    if the features are enabled,
+    this test verifies checksum integrity for both the Tx and Rx,
+    for both the interface and the MAC port
+
+    This test sends a single packet with an arbitrary payload from the host,
+    through the DUT, manually captures the packet at the MAC port,
+    resends it back up through the same MAC port,
+    and catches it back at the host
     """
     tb.log.info("RX and TX checksum tests")
 
@@ -523,7 +540,7 @@ async def q_map_rss_mask_test(tb: TB):
     payload = bytes([x % 256 for x in range(256)])
     eth = Ether(src='5A:51:52:53:54:55', dst='DA:D1:D2:D3:D4:D5')
     ip = IP(src='192.168.1.100', dst='192.168.1.101')
-    
+
     for k in range(count):
         udp = UDP(sport=1, dport=k+0)
         test_pkt = eth / ip / udp / payload
@@ -558,27 +575,24 @@ async def all_interfaces_test(tb):
 
     pkts = [bytearray([(x+k) % 256 for x in range(1514)]) for k in range(count)]
 
-    tb.loopback_enable = True
+    with loopback_enabled(tb):
+        for k, p in enumerate(pkts):
+            await tb.driver.interfaces[k % len(tb.driver.interfaces)].start_xmit(p, 0)
 
-    for k, p in enumerate(pkts):
-        await tb.driver.interfaces[k % len(tb.driver.interfaces)].start_xmit(p, 0)
+        for k in range(count):
+            pkt = await tb.driver.interfaces[k % len(tb.driver.interfaces)].recv()
 
-    for k in range(count):
-        pkt = await tb.driver.interfaces[k % len(tb.driver.interfaces)].recv()
+            if pkt is None:
+                raise ValueError("Packet is None")
 
-        if pkt is None:
-            raise ValueError("Packet is None")
+            tb.log.info("Packet: %s", pkt)
 
-        tb.log.info("Packet: %s", pkt)
+            assert pkt.data == pkts[k]
 
-        assert pkt.data == pkts[k]
-
-        if tb.driver.interfaces[0].if_feature_rx_csum:
-            assert pkt.rx_checksum == ~scapy.utils.checksum(
-                bytes(pkt.data[14:])
-            ) & 0xffff
-
-    tb.loopback_enable = False
+            if tb.driver.interfaces[0].if_feature_rx_csum:
+                assert pkt.rx_checksum == ~scapy.utils.checksum(
+                    bytes(pkt.data[14:])
+                ) & 0xffff
 
 
 async def all_scheduler_blocks_test(tb: TB, interface: mqnic.Interface):
@@ -598,29 +612,26 @@ async def all_scheduler_blocks_test(tb: TB, interface: mqnic.Interface):
 
     pkts = [bytearray([(x+k) % 256 for x in range(1514)]) for k in range(count)]
 
-    tb.loopback_enable = True
+    with loopback_enabled(tb):
+        queues = set()
 
-    queues = set()
+        for k, p in enumerate(pkts):
+            await interface.start_xmit(p, k % len(interface.sched_blocks))
 
-    for k, p in enumerate(pkts):
-        await interface.start_xmit(p, k % len(interface.sched_blocks))
+        for k in range(count):
+            pkt = await interface.recv()
 
-    for k in range(count):
-        pkt = await interface.recv()
+            if pkt is None:
+                raise ValueError("Packet is None")
 
-        if pkt is None:
-            raise ValueError("Packet is None")
+            tb.log.info("Packet: %s", pkt)
+            # assert pkt.data == pkts[k]
+            if interface.if_feature_rx_csum:
+                assert pkt.rx_checksum == ~scapy.utils.checksum(bytes(pkt.data[14:])) & 0xffff
 
-        tb.log.info("Packet: %s", pkt)
-        # assert pkt.data == pkts[k]
-        if interface.if_feature_rx_csum:
-            assert pkt.rx_checksum == ~scapy.utils.checksum(bytes(pkt.data[14:])) & 0xffff
+            queues.add(pkt.queue)
 
-        queues.add(pkt.queue)
-
-    assert len(queues) == len(interface.sched_blocks)
-
-    tb.loopback_enable = False
+        assert len(queues) == len(interface.sched_blocks)
 
     for block in interface.sched_blocks[1:]:
         await block.schedulers[0].rb.write_dword(mqnic.MQNIC_RB_SCHED_RR_REG_CTRL, 0x00000000)
@@ -629,10 +640,10 @@ async def all_scheduler_blocks_test(tb: TB, interface: mqnic.Interface):
 
 async def lfc_pause_frame_receiver_test(tb: TB, interface: mqnic.Interface):
     await interface.ports[0].set_lfc_ctrl(
-        mqnic.MQNIC_PORT_LFC_CTRL_TX_LFC_EN 
+        mqnic.MQNIC_PORT_LFC_CTRL_TX_LFC_EN
         | mqnic.MQNIC_PORT_LFC_CTRL_RX_LFC_EN
     )
-    
+
     await tb.driver.hw_regs.read_dword(0)
 
     lfc_xoff = Ether(
@@ -657,7 +668,7 @@ async def full_nic_test(dut):
         await tb.driver.init_pcie_dev(device)
     for interface in tb.driver.interfaces:
         await interface.open()
-    
+
     # enable queues
     tb.log.info("Enable queues")
     for interface in tb.driver.interfaces:
@@ -735,9 +746,8 @@ async def full_nic_test(dut):
         await lfc_pause_frame_receiver_test(tb, tb.driver.interfaces[0])
 
     # -------------------- Another kind of test --------------------
-    
-    # TODO: do I want this or not?
-    # await dma_bench_test(tb)
+
+    await dma_bench_test(tb)
 
     # ------------------------- Read Stats -------------------------
 

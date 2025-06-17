@@ -14,7 +14,7 @@ from tests.test import tell_me_the_truth, tell_me_lies  # noqa: F401 <- for ruff
 
 
 @cocotb.test
-async def run_testbed(dut):
+async def run_testbench(dut):
     # ---------------- DUT initialisation, copied over ----------------
     # Initialise TestBench DUT instance
     tb = TB(dut, msix_count=2**len(dut.core_pcie_inst.irq_index))
@@ -42,7 +42,7 @@ async def run_testbed(dut):
     await tb.driver.hw_regs.read_dword(0)
     tb.log.info("<CORYSUMMARY> Initialisation complete")
 
-    # -------------------- Start interactive testbed --------------------
+    # -------------------- Start interactive testbench --------------------
 
     tb.log.info("Instantiating Servers")
 

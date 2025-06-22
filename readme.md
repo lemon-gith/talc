@@ -2,114 +2,27 @@
 
 Talc is a Verilator Testbench harness designed to test hardware implementations of networking-related logic, implemented on the [Corundum NIC](https://github.com/corundum/corundum).
 
-There are a few systems in this repo, the primary system being Talc.
+## Codespaces Version
+
+>[!NOTE]
+>This repo has been slightly modified to run in GitHub Codespaces. The changes are not substantial and consist of changes only to the devcontainer file, removing unavailable options and automating things that would otherwise be expected from the user, to allow it to be built by a runner.
 
 ## Usage
 
 >[!WARNING]
->Generally, I cannot guarantee that any of these will run outside of the provided containers due to the dependencies of the the simulation tools and environment.
-
-Talc and CorunTB have both Docker Containers _and_ accompanying [DevContainer](https://code.visualstudio.com/docs/devcontainers/containers) configuration files for use with VSCode. I provide pure docker instructions for _all_ the containers, to not force any particular system on anyone, though, using a DevContainer is my preferred development environment.\
-As such, prerequisites are:
-
-- [Docker](https://www.docker.com/) (obviously)
-
-If using VSCode and DevContainers:
-- [VSCode](https://code.visualstudio.com/)
-- [DevContainers extension](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers)
+>I cannot guarantee that any containers but that for Talc will run in this environment. Moreover, it must be within a DevContainer, because that is what a GitHub Codespace uses to configure itself.
 
 ### Talc
 
 This is the primary testbench container that I have developed for my FYP.
 
-#### VSCode
+#### GitHub Codespaces
 
-1. Clone repo
-2. Initialise and Update git [submodule](./nics/corundum/)
-   - `git submodule update --init --recursive` would pull in _all_ submodules
-3. Open in VSCode
-4. If you don't have GPUs or haven't set them up to work with docker, comment out `--gpus=all` in [`devcontainer.json`](./.devcontainer/devcontainer.json)
-5. `> Reopen in Container` (selecting the `talc` option)
-6. Begin development
+1. Create a GitHub Codespace on this branch
+2. Start Testing
 
-#### Docker
-
-1. Clone repo
-2. Initialise and Update git [submodule](./nics/corundum/)
-   - `git submodule update --init --recursive` would pull in _all_ submodules
-3. Execute docker instructions laid out at the bottom of the [Dockerfile](./containers/talc.Dockerfile):
-   - Run from repository root
-   - `docker build -t talc -f containers/talc.Dockerfile .`
-   - `docker run -d --name tlc --gpus=all --cap-add=NET_RAW --cap-add=NET_ADMIN --device /dev/net/tun:/dev/net/tun --mount type=bind,src=./src/tb,dst=/talc/tb/testbench/ --mount type=bind,src=./src/utils/py,dst=/talc/pyutils --mount type=bind,src=./nics/corundum/fpga/app/talc/rtl,dst=/talc/rtl talc`
-     - If you don't have GPUs or haven't set them up to work with docker, remove the `--gpus=all` option (`argv[5]`)
-   - `docker exec -it tlc bash`
-4. Begin Development
-
-### CorunSim
-
-[CorunSim](./containers/corunsim.Dockerfile) is an alternative, isolated DUT, based on SimBricks' adaptation of Corundum. It features an extracted version of the [older Corundum](https://github.com/corundum/corundum/tree/d0c9a83752cde7715787aa31a5bb951fc808e0cc) implementation that was tweaked for use with the version of [SimBricks](https://github.com/simbricks/simbricks/tree/57eeed65e91a467ce745b3880347f978c57e3beb), that I started with.
-
-This container just contains an extracted version of the old SimBricks implementation of the Corundum NIC, which exposes two sockets to connect to for PCIe and MAC communication.
-
-#### Docker
-
-1. Clone repo
-2. Initialise and Update git [submodule](./nics/corunsim/corundum/)
-   - `git submodule update --init --recursive` would pull in _all_ submodules
-3. Execute docker instructions laid out at the bottom of the [Dockerfile](./containers/corunsim.Dockerfile):
-   - Run from repository root
-   - `docker build -t corunsim_test -f containers/corunsim.Dockerfile .`
-   - `docker run -d --name corunsim_tb corunsim_test`
-   - `docker exec -it corunsim_tb bash`
-4. Begin Work
-
-### CorunTB
-
-[`CorunTB`](./containers/coruntb.Dockerfile) is an outdated version of the Talc system that doesn't contain a lot of the newer additions to the environment, but I kept it here in case one wishes to use a very simple version of this testbench, without the full development toolset, and large codebase refactoring.
-
-#### VSCode
-
-1. Clone repo
-2. Initialise and Update git [submodule](./nics/corundum/)
-   - `git submodule update --init --recursive` would pull in _all_ submodules
-3. Open in VSCode
-4. If you don't have GPUs or haven't set them up to work with docker, comment out `--gpus=all` in [`devcontainer.json`](./.devcontainer/devcontainer.json)
-5. `> Reopen in Container` (selecting the `coruntb` option)
-6. Begin development
-
-#### Docker
-
-1. Clone repo
-2. Initialise and Update git [submodule](./nics/corundum/)
-   - `git submodule update --init --recursive` would pull in _all_ submodules
-3. Execute docker instructions laid out at the bottom of the [Dockerfile](./containers/coruntb.Dockerfile):
-   - Run from repository root
-   - `docker build -t coruntb -f containers/coruntb.Dockerfile .`
-   - `docker run -d --name cortb --gpus=all --cap-add=NET_RAW --cap-add=NET_ADMIN --device /dev/net/tun:/dev/net/tun --mount type=bind,src=./src/tb,dst=/corundum/fpga/app/template/tb/coruntb --mount type=bind,src=./src/tap/py/,dst=/tapaz/ coruntb`
-     - If you don't have GPUs or haven't set them up to work with docker, remove the `--gpus=all` option (`argv[5]`)
-   - `docker exec -it cortb bash`
-4. Begin Development
-
-### Tunic
-
-[`Tunic`](./containers/tunic.Dockerfile) is based off of [this fork](https://github.com/lemon-gith/tunic), of the [Tonic](https://github.com/minmit/tonic) system. This was intended to be fixed up and merged into the Corundum App Logic block, to provide a further template for hardware implementation.
-
-> [!WARNING]
-> There really is not much use in opening this container, since it's unfinished and still has a lot of the bugs present in the original repo.
-
-#### Docker
-
-1. Clone repo
-2. Initialise and Update git [submodule](./nics/tunic/)
-   - `git submodule update --init --recursive` would pull in _all_ submodules
-3. Execute docker instructions laid out at the bottom of the [Dockerfile](./containers/talc.Dockerfile):
-   - Run from repository root
-   - `docker build -t tunic_test -f containers/tunic.Dockerfile .`
-   - `docker run -d --name tunic_tb tunic_test`
-   - `docker exec -it tunic_tb bash`
-4. `source /tunic/venv/bin/activate`
-5. Begin Work
-   - `./tools/runtest --type sim --config tonic/tonic_reno.yaml`
+>[!WARNING]
+>Please note that due to the remote nature of the Codespace and the restructuring present in the repo, there is currently no simple way to commit any work done within the codespace. For development, please use the main branch and clone a local copy. This branch is only good for quick and portable testing of the existing system.
 
 ## Repository Structure
 

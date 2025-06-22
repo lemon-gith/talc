@@ -73,10 +73,6 @@ RUN python3 -m venv venv
 RUN . activenv && pip install --upgrade pip
 RUN . activenv && pip install -r /talc/requirements.txt
 
-# TODO: Since I'm maintaining the overall file structure,
-# can just give short instruction on how to port to full repo
-# in order to be able to put it onto one of the supported FPGA boards
-
 # give python executable networking capabilities (using our global script)
 RUN privesc set /usr/bin/python3.12
 
@@ -88,7 +84,5 @@ ENTRYPOINT [ "sleep", "infinity" ]
 
 # run from repo root:
 # docker build -t talc -f containers/talc.Dockerfile .
-# docker run -d --name tlc --gpus=all --cap-add=NET_RAW --cap-add=NET_ADMIN --device /dev/net/tun:/dev/net/tun --mount type=bind,src=./src/tb,dst=/talc/tb/testbench/ --mount type=bind,src=./src/tap/py,dst=/talc/pyutils talc
+# docker run -d --name tlc --gpus=all --cap-add=NET_RAW --cap-add=NET_ADMIN --device /dev/net/tun:/dev/net/tun --mount type=bind,src=./src/tb,dst=/talc/tb/testbench/ --mount type=bind,src=./src/utils/py,dst=/talc/pyutils --mount type=bind,src=./nics/corundum/fpga/app/talc/rtl,dst=/talc/rtl talc
 # docker exec -it tlc bash
-
-# then you can run make to run the testbench with `make`

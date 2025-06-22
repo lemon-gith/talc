@@ -53,7 +53,7 @@ function print_help {
     echo -e "     Note: logs consist of both stdout and stderr from the command"
     echo
 	echo -e "$bb$base_name$c$b interact$c"
-	echo -e "       I'll move to $bb$cor_home$c and opens the$p scapy$c"\
+	echo -e "       I'll move to $bb$cor_home$c and open the$p scapy$c"\
         "interactive terminal for you"
     echo
 	echo -e "${bb}[source | .] $base_name$c$b cd [ home | logs ]?$c"

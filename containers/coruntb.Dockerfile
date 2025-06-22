@@ -39,11 +39,6 @@ RUN . activenv && pip install -r /corundum/requirements.txt
 
 # copy over corundum files
 COPY ./nics/corundum /corundum
-# TODO: possibly do similar extractions as in corunsim to reduce complexity?
-# As in, strip the system down to just what we need?
-# Since I'm maintaining the overall file structure,
-# can just give short instruction on how to port to full repo
-# in order to be able to put it onto one of the supported FPGA boards
 
 # give python executable networking capabilities (using our global script)
 RUN privesc set /usr/bin/python3.12

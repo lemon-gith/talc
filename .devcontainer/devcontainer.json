@@ -40,8 +40,8 @@
     }  // note: all other corundum files in container are NOT MOUNTED
   ],
 
-  // mount testbed directory to save changes outside of container
-  "workspaceMount": "source=${localWorkspaceFolder}/src/tb/,target=/talc/tb/testbed/,type=bind",
+  // mount testbench directory to save changes outside of container
+  "workspaceMount": "source=${localWorkspaceFolder}/src/tb/,target=/talc/tb/testbench/,type=bind",
   "workspaceFolder": "/talc",
 
   "customizations": {
